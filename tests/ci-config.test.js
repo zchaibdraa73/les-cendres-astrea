@@ -11,12 +11,12 @@ test("le workflow GitHub exécute la recette avec des permissions minimales",asy
   assert.deepEqual(workflow.permissions,{contents:"read"});
   assert.equal(workflow.jobs.quality["timeout-minutes"],20);
   const steps=workflow.jobs.quality.steps;
-  assert.ok(steps.some(step=>step.uses==="actions/checkout@v7"&&step.with["persist-credentials"]===false));
-  assert.ok(steps.some(step=>step.uses==="actions/setup-node@v6"&&step.with.cache==="npm"));
+  assert.ok(steps.some(step=>/^actions\/checkout@[a-f0-9]{40}$/u.test(step.uses)&&step.with["persist-credentials"]===false));
+  assert.ok(steps.some(step=>/^actions\/setup-node@[a-f0-9]{40}$/u.test(step.uses)&&step.with.cache==="npm"));
   assert.ok(steps.some(step=>step.run==="npm ci --ignore-scripts"));
   assert.ok(steps.some(step=>step.run==="npx playwright install --with-deps chromium"));
   assert.ok(steps.some(step=>step.run==="npm run ci"));
-  assert.ok(steps.some(step=>step.uses==="actions/upload-artifact@v7"));
+  assert.ok(steps.some(step=>/^actions\/upload-artifact@[a-f0-9]{40}$/u.test(step.uses)));
 });
 
 test("Dependabot surveille npm et les actions GitHub chaque semaine",async()=>{

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/build-integrity.mjs",
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json",
@@ -18,8 +18,9 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
     "audit:dependencies": "npm audit --audit-level=high",
+    "verify:integrity": "node scripts/build-integrity.mjs --verify",
     "audit": "node release-audit.js",
-    "check:syntax": "node --check main.js && node --check data.js && node --check engine.js && node --check state-system.js && node --check map-system.js && node --check balance-system.js && node --check validation-system.js && node --check game.js && node --check release-audit.js && node --check vite.config.mjs && node --check eslint.config.mjs && node --check playwright.config.mjs && node --check tests/e2e/game-smoke.spec.mjs && node --check src/content/classes.mjs && node --check src/content/maps.mjs && node --check src/content/narrative.mjs && node --check src/config/game-options.mjs && node --check src/services/player-storage.mjs && node --check src/services/save-slots.mjs && node --check src/services/audio-service.mjs && node --check src/maps/world-navigation.mjs && node --check src/ui/presenters.mjs && node --check src/combat/combat-helpers.mjs && node --check src/validation/game-schemas.mjs",
+    "check:syntax": "node --check main.js && node --check data.js && node --check engine.js && node --check state-system.js && node --check map-system.js && node --check balance-system.js && node --check validation-system.js && node --check game.js && node --check release-audit.js && node --check vite.config.mjs && node --check eslint.config.mjs && node --check playwright.config.mjs && node --check scripts/build-integrity.mjs && node --check tests/e2e/game-smoke.spec.mjs && node --check src/content/classes.mjs && node --check src/content/maps.mjs && node --check src/content/narrative.mjs && node --check src/config/game-options.mjs && node --check src/services/player-storage.mjs && node --check src/services/save-slots.mjs && node --check src/services/audio-service.mjs && node --check src/maps/world-navigation.mjs && node --check src/ui/presenters.mjs && node --check src/combat/combat-helpers.mjs && node --check src/validation/game-schemas.mjs",
     "check": "npm run check:syntax && npm run lint && npm run typecheck && npm run test && npm run audit && npm run build && npm run test:e2e",
     "ci": "npm run audit:dependencies && npm run check"
   },
@@ -36,6 +37,8 @@
   "dependencies": {
     "@fontsource/cinzel": "5.3.0",
     "@fontsource/inter": "5.3.0",
+    "@noble/hashes": "2.2.0",
+    "dompurify": "3.4.12",
     "zod": "4.4.3"
   }
 }

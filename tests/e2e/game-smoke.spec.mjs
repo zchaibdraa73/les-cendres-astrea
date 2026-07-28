@@ -41,7 +41,10 @@ test("une nouvelle partie déterministe atteint la carte et produit une sauvegar
   await startRun(page,{className:"L'Arcaniste",seed:"424242",difficulty:"Péril"});
   await expect(page.locator("#exploration .location strong")).toHaveText("La Route des Cendres");
   await expect(page.getByRole("button",{name:"Profil"})).toBeVisible();
-  const save=await page.evaluate(()=>JSON.parse(localStorage.getItem("astrea-save-v3-slot-1")));
+  const envelope=await page.evaluate(()=>JSON.parse(localStorage.getItem("astrea-save-v3-slot-1")));
+  expect(envelope).toMatchObject({integrityVersion:1,algorithm:"SHA-256",kind:"save"});
+  expect(envelope.checksum).toMatch(/^[a-f0-9]{64}$/);
+  const save=envelope.payload;
   expect(save).toMatchObject({version:28,classId:"arcaniste",seed:424242,currentRegion:1,level:1});
   expect(save.run.difficulty).toBe("peril");
   expect(save.route.length).toBeGreaterThan(20);
@@ -76,7 +79,7 @@ test("une sauvegarde principale corrompue est restaurée depuis sa copie",async(
   await page.getByRole("button",{name:/Continuer/}).click();
   await expect(page.locator("#exploration")).toBeVisible();
   await expect(page.locator("#toast")).toContainText("réparée depuis la copie de secours");
-  const restored=await page.evaluate(()=>JSON.parse(localStorage.getItem("astrea-save-v3-slot-1")));
+  const restored=await page.evaluate(()=>JSON.parse(localStorage.getItem("astrea-save-v3-slot-1")).payload);
   expect(restored).toMatchObject({version:28,classId:"bastion",seed:98765});
   assertNoRuntimeErrors();
 });
