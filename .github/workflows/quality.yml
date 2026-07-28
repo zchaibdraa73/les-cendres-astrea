@@ -1,0 +1,64 @@
+name: Qualité et sécurité
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - "codex/**"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Recette complète
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Récupérer les sources
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Installer les dépendances verrouillées
+        run: npm ci --ignore-scripts
+
+      - name: Installer Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Auditer et tester la release
+        run: npm run ci
+
+      - name: Publier le build validé
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: les-cendres-astrea-web
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publier les diagnostics Playwright
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-diagnostics
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

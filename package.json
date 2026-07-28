@@ -1,0 +1,41 @@
+{
+  "name": "les-cendres-astrea",
+  "version": "3.0.0-rc.1",
+  "private": true,
+  "packageManager": "npm@11.16.0",
+  "engines": {
+    "node": "24.18.x",
+    "npm": "11.16.x"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "audit:dependencies": "npm audit --audit-level=high",
+    "audit": "node release-audit.js",
+    "check:syntax": "node --check main.js && node --check data.js && node --check engine.js && node --check state-system.js && node --check map-system.js && node --check balance-system.js && node --check validation-system.js && node --check game.js && node --check release-audit.js && node --check vite.config.mjs && node --check eslint.config.mjs && node --check playwright.config.mjs && node --check tests/e2e/game-smoke.spec.mjs && node --check src/content/classes.mjs && node --check src/content/maps.mjs && node --check src/content/narrative.mjs && node --check src/config/game-options.mjs && node --check src/services/player-storage.mjs && node --check src/services/save-slots.mjs && node --check src/services/audio-service.mjs && node --check src/maps/world-navigation.mjs && node --check src/ui/presenters.mjs && node --check src/combat/combat-helpers.mjs && node --check src/validation/game-schemas.mjs",
+    "check": "npm run check:syntax && npm run lint && npm run typecheck && npm run test && npm run audit && npm run build && npm run test:e2e",
+    "ci": "npm run audit:dependencies && npm run check"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.62.0",
+    "@types/node": "24.13.3",
+    "eslint": "10.8.0",
+    "globals": "17.8.0",
+    "typescript": "7.0.2",
+    "vite": "8.1.5",
+    "yaml": "2.9.0"
+  },
+  "dependencies": {
+    "@fontsource/cinzel": "5.3.0",
+    "@fontsource/inter": "5.3.0",
+    "zod": "4.4.3"
+  }
+}
