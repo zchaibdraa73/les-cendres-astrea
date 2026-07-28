@@ -45,8 +45,9 @@ Le catalogue contient désormais 98 objets : les 62 pièces historiques et
 | Royaume sous la Cendre | 12 | 2 | 2 | 2 | 2 | 2 | 2 |
 | Brasier Originel | 14 | 2 | 2 | 2 | 3 | 2 | 3 |
 
-Les jambes existent aux quatre raretés. Les nouvelles pièces alimentent aussi
-onze pouvoirs d'artéfact, trois nouveaux ensembles et huit recettes de forge.
+Les jambes existent aux quatre raretés. Le catalogue total possède désormais
+29 pouvoirs d'artéfact, six ensembles et quatorze recettes de forge. Deux
+formules d'amulettes complètent la couverture de fabrication.
 
 Le classement préparatoire place les 24 armes historiques dans le type
 `weapon`, les 18 anciennes armures sur le torse, quatre anciens bijoux visuels
@@ -104,3 +105,21 @@ Le moteur, la forge, le butin et les présélections passent tous par ces règle
 - statistiques, ensembles et artéfacts parcourent les huit emplacements sans
   compter deux fois une même instance ;
 - une présélection ne peut charger qu'un objet possédé et compatible.
+
+## Consolidation de l'axe 6
+
+La refonte est désormais protégée par `equipment-audit.mjs`, exécuté pendant
+`npm run check`. Une release est refusée si :
+
+- une région ne propose pas chacun des six types d'objet ;
+- la puissance moyenne d'un groupe régresse entre deux régions ou s'écarte
+  excessivement des deux autres groupes ;
+- une rareté ne dépasse pas la précédente ;
+- un artéfact ne possède pas son pouvoir dédié ;
+- le palier maximal d'un ensemble ne peut pas être porté simultanément ;
+- la forge oublie un type d'équipement ;
+- un des huit emplacements n'a plus aucun objet compatible.
+
+Le rapport `npm run audit:equipment` expose les courbes d'armure, d'armes et de
+bijoux par région. Les tests injectent volontairement des catalogues cassés afin
+de garantir que chaque garde-fou bloque effectivement la release.

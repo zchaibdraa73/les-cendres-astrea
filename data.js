@@ -426,7 +426,9 @@ globalThis.GAME_DATA = {
       {id:"recipe_royal_ash_plate",name:"Plan de la Cuirasse royale",item:"royal_ash_plate",cost:{iron:20,ember:6,essence:2}},
       {id:"recipe_executioner_greaves",name:"Plan des Grèves du bourreau",item:"executioner_greaves",cost:{iron:18,ember:5,essence:2}},
       {id:"recipe_oathbound_greaves",name:"Plan des Grèves du Serment",item:"oathbound_greaves",cost:{iron:22,moon_glass:6,star_fragment:2}},
-      {id:"recipe_returning_ring",name:"Formule de l'Anneau du Retour",item:"returning_ring",cost:{moon_glass:8,essence:3,star_fragment:2}}
+      {id:"recipe_returning_ring",name:"Formule de l'Anneau du Retour",item:"returning_ring",cost:{moon_glass:8,essence:3,star_fragment:2}},
+      {id:"recipe_silent_oath",name:"Formule du Médaillon du serment muet",item:"silent_oath",cost:{iron:10,ember:5,pale_fiber:2}},
+      {id:"recipe_drowned_choir",name:"Formule du Reliquaire du chœur noyé",item:"drowned_choir",cost:{pale_fiber:10,moon_glass:7,essence:2}}
     ]
   },
   items: [

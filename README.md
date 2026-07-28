@@ -14,8 +14,8 @@ Le projet utilise Node.js `24.18.x` et npm `11.16.x`. Les versions attendues son
 déclarées dans `package.json` et `.nvmrc`. Après récupération du projet, exécuter
 `npm ci`, puis `npm run check` pour reproduire exactement l'environnement validé.
 La commande complète contrôle la syntaxe, ESLint, TypeScript, les tests unitaires,
-l'audit d'équilibrage, le build Vite de production et cinq parcours réels dans
-Chromium avec Playwright.
+l'équilibrage général, l'audit spécialisé des huit emplacements, le build Vite
+de production et cinq parcours réels dans Chromium avec Playwright.
 
 Les commandes `npm run test:e2e` et `npm run test:e2e:headed` permettent de
 relancer séparément les tests navigateur, en arrière-plan ou avec une fenêtre
@@ -49,7 +49,7 @@ décrite dans `SECURITY.md`.
 - Quatre classes aux histoires et styles de jeu détaillés
 - Nouvelle classe : le Pénitent, fondée sur le sacrifice et la polyvalence
 - Catalogue externe `data.js` séparant le contenu de la logique
-- 56 équipements répartis en quatre raretés
+- 98 équipements répartis entre huit emplacements et quatre raretés
 - 34 familles d'ennemis
 - 9 attaques et 9 passifs propres à chacune des quatre classes
 - Progression complète jusqu'au niveau 30 pour chaque classe
@@ -86,7 +86,7 @@ décrite dans `SECURITY.md`.
 - Niveaux ennemis adaptatifs et niveau conseillé affiché sur la carte
 - Interface de combat tactique : cible détaillée, estimations, énergie, armure et critique
 - Menu du personnage unifié avec navigation entre héros, inventaire et pouvoirs
-- Comparaison directe des équipements et arsenal visuel à quatre emplacements
+- Inventaire professionnel avec recherche, filtres, comparaison réelle et silhouette à huit emplacements
 - Combat tactique avec Brûlure, Saignement, Faiblesse, Armure brisée et Marqué
 - Barrière, Régénération et Furie pour construire des synergies défensives ou offensives
 - Intentions ennemies par rôle : attaque lourde, lacération, malédiction et fortification
@@ -100,11 +100,11 @@ décrite dans `SECURITY.md`.
 - Deux spécialisations de classe au niveau 10, prolongées par une voie avancée au niveau 20
 - Évolution alternative des attaques : Puissance ou Maîtrise
 - Six passifs équipables parmi les neuf appris
-- Affixes aléatoires et trois ensembles d'équipement à bonus progressifs
+- Affixes aléatoires et six ensembles d'équipement à bonus progressifs
 - Démantèlement de l'équipement à la forge contre des matériaux
 - Plafonds d'amélioration par rareté : niveaux 3, 5, 7 et 10
 - Réenchantement des affixes et sertissage de quatre types de runes
-- Recettes rares découvertes dans les détours et fabrication dédiée
+- Quatorze recettes rares couvrant tête, torse, jambes, armes, amulettes et bagues
 - Marchand déterministe lié à la graine et protection de butin contre les doublons inutiles
 - Journal du monde regroupant fragments de lore, bestiaire et collection d'objets
 - Ambiance sonore générée et effets distincts pour attaques, sorts, impacts et récompenses
@@ -119,6 +119,7 @@ décrite dans `SECURITY.md`.
 - Réparation automatique d'un emplacement principal depuis sa dernière copie valide
 - Export et import d'une archive JSON regroupant parties, Sanctuaire et options
 - Audit de release automatisé pour les cartes, catalogues, classes, ennemis, équipement et économie
+- Contrôle bloquant des courbes régionales, budgets par groupe, ensembles équipables et couverture de forge
 - Options persistantes : volume, sourdine, texte, contraste et réduction des animations
 - Événements narratifs à choix multiples avec conditions de classe, statistiques et décisions antérieures
 - Réputation persistante auprès de trois factions, objets de quête séparés et conséquences différées
@@ -181,7 +182,7 @@ décrite dans `SECURITY.md`.
 - Bilan d'expédition enrichi avec les vagues surmontées et dangers traversés
 - Neuf maîtrises par classe réparties en trois branches, avec six points gagnés jusqu'au niveau 30
 - Transformations de techniques propres à chaque classe : Fracas/Égide, Prédation/Danse, Combustion/Flux et Sacrifice/Pardon
-- Effets uniques pour les dix-huit artéfacts, désormais capables de modifier ressources, techniques, posture ou survie
+- Effets uniques pour les vingt-neuf artéfacts, capables de modifier ressources, techniques, posture ou survie
 - Trois présélections enregistrant simultanément équipement, techniques, passifs et transformations
 - Réinitialisation complète du build contre un Fragment stellaire
 - Détail transparent du calcul de dégâts pour chaque technique
@@ -191,7 +192,7 @@ décrite dans `SECURITY.md`.
 Exécuter `npm test` pour lancer les tests unitaires avec le moteur de test natif de Node.js.
 La commande `npm run check` vérifie également la syntaxe de tous les scripts.
 - Nouvelle direction artistique « Au-delà du Voile »
-- Douze équipements, sept ennemis et un boss propres à la deuxième région
+- Quarante équipements, sept ennemis et un boss propres à la deuxième région
 - Une attaque et un passif régionaux supplémentaires par classe
 - Route aléatoire persistante : butin, sanctuaire, repos ou rencontre hostile
 - Combat tutoriel scripté : attaque, garde, compétence et potion

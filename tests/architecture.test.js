@@ -282,7 +282,7 @@ test("la release candidate protège et transporte les sauvegardes",()=>{
 test("le socle de développement est verrouillé et contrôlé",()=>{
   const packageJson=JSON.parse(fs.readFileSync(path.join(__dirname,"..","package.json"),"utf8"));
   const lock=JSON.parse(fs.readFileSync(path.join(__dirname,"..","package-lock.json"),"utf8"));
-  for(const script of ["dev","build","lint","typecheck","check"])assert.ok(packageJson.scripts[script],`script npm manquant : ${script}`);
+  for(const script of ["dev","build","lint","typecheck","audit:equipment","check"])assert.ok(packageJson.scripts[script],`script npm manquant : ${script}`);
   for(const dependency of ["vite","typescript","eslint","@eslint/js","globals","@types/node","@playwright/test","yaml"]){
     assert.match(packageJson.devDependencies[dependency],/^\d+\.\d+\.\d+$/);
     assert.equal(lock.packages[`node_modules/${dependency}`].version,packageJson.devDependencies[dependency]);
@@ -291,7 +291,7 @@ test("le socle de développement est verrouillé et contrôlé",()=>{
     assert.match(packageJson.dependencies[dependency],/^\d+\.\d+\.\d+$/);
     assert.equal(lock.packages[`node_modules/${dependency}`].version,packageJson.dependencies[dependency]);
   }
-  for(const file of ["main.js","vite.config.mjs","eslint.config.mjs","playwright.config.mjs","tsconfig.json","tests/e2e/game-smoke.spec.mjs","src/content/classes.mjs","src/content/maps.mjs","src/content/narrative.mjs","src/config/game-options.mjs","src/services/player-storage.mjs","src/services/save-slots.mjs","src/services/audio-service.mjs","src/maps/world-navigation.mjs","src/ui/presenters.mjs","src/ui/character-panels.mjs","src/combat/combat-helpers.mjs","src/validation/game-schemas.mjs"])assert.ok(fs.existsSync(path.join(__dirname,"..",file)),`configuration manquante : ${file}`);
+  for(const file of ["main.js","vite.config.mjs","eslint.config.mjs","playwright.config.mjs","tsconfig.json","scripts/audit-equipment.mjs","tests/equipment-audit.test.js","tests/e2e/game-smoke.spec.mjs","src/content/classes.mjs","src/content/maps.mjs","src/content/narrative.mjs","src/config/game-options.mjs","src/equipment/equipment-audit.mjs","src/services/player-storage.mjs","src/services/save-slots.mjs","src/services/audio-service.mjs","src/maps/world-navigation.mjs","src/ui/presenters.mjs","src/ui/character-panels.mjs","src/combat/combat-helpers.mjs","src/validation/game-schemas.mjs"])assert.ok(fs.existsSync(path.join(__dirname,"..",file)),`configuration manquante : ${file}`);
 });
 
 test("game.js orchestre les sous-systèmes sans réembarquer leurs catalogues",()=>{

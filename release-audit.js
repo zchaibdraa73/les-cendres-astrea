@@ -68,7 +68,7 @@ check(sanctuaryRuns>=2.5&&sanctuaryRuns<=6,`Économie du Sanctuaire hors cible :
 check(saveSystem.CURRENT_VERSION>=28,"La version de sauvegarde attendue n'est pas active.");
 check(packageJson.version==="3.0.0-rc.1","La version du package ne correspond pas à la release candidate.");
 check(html.includes("v3.0 RC1"),"La version affichée dans le menu ne correspond pas au package.");
-for(const file of ["index.html","styles.css","data.js","engine.js","game.js","state-system.js","src/content/classes.mjs","src/content/maps.mjs","src/content/narrative.mjs","src/config/game-options.mjs","src/services/player-storage.mjs","src/services/save-slots.mjs","src/services/audio-service.mjs","src/maps/world-navigation.mjs","src/ui/presenters.mjs","src/combat/combat-helpers.mjs","README.md"])check(fs.existsSync(path.join(root,file)),`Fichier de release manquant : ${file}`);
+for(const file of ["index.html","styles.css","data.js","engine.js","game.js","state-system.js","scripts/audit-equipment.mjs","src/content/classes.mjs","src/content/maps.mjs","src/content/narrative.mjs","src/config/game-options.mjs","src/equipment/equipment-audit.mjs","src/services/player-storage.mjs","src/services/save-slots.mjs","src/services/audio-service.mjs","src/maps/world-navigation.mjs","src/ui/presenters.mjs","src/ui/character-panels.mjs","src/combat/combat-helpers.mjs","README.md","docs/equipment-refactor.md"])check(fs.existsSync(path.join(root,file)),`Fichier de release manquant : ${file}`);
 check(!/\b(?:TODO|FIXME)\b/.test(source),"Le moteur contient encore un TODO ou FIXME.");
 
 console.log("AUDIT DE RELEASE · LES CENDRES D'ASTRÉA");
