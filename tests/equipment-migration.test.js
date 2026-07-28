@@ -86,6 +86,32 @@ test("la migration est idempotente et refuse le double équipement d'une instanc
   assert.equal(Object.values(save.equipment).filter(entry=>entry?.uid==="same-weapon").length,1);
 });
 
+test("un équipement canonique n'est plus écrasé par l'ancien bloc à trois cases",async()=>{
+  const {migrateEquipmentSave}=await import("../src/equipment/equipment-migration.mjs");
+  const oldWeapon=item("iron_sword","old-weapon");
+  const rightWeapon=item("mist_dagger","right-weapon");
+  const leftWeapon=item("ember_staff","left-weapon");
+  const save={
+    equipmentModelVersion:1,
+    inventory:[oldWeapon,rightWeapon,leftWeapon],
+    equipped:{Arme:oldWeapon},
+    equipment:{
+      head:null,
+      chest:null,
+      legs:null,
+      mainHand:rightWeapon,
+      offHand:leftWeapon,
+      amulet:null,
+      ring1:null,
+      ring2:null,
+    },
+  };
+  migrateEquipmentSave(save);
+  assert.equal(save.equipment.mainHand.uid,"right-weapon");
+  assert.equal(save.equipment.offHand.uid,"left-weapon");
+  assert.equal(Object.values(save.equipment).some(entry=>entry?.uid==="old-weapon"),false);
+});
+
 test("le filet de migration autonome fonctionne sans le catalogue du jeu",()=>{
   saveSystem.setMigrationHandlers();
   const migrated=saveSystem.migrate({

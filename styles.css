@@ -424,6 +424,8 @@ body.reduced-motion *,body.reduced-motion *:before,body.reduced-motion *:after{a
 .damage-breakdown summary{cursor:pointer;color:#9d895c;font:600 .43rem Cinzel,serif}
 .damage-breakdown div{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px}.damage-breakdown span{display:flex;justify-content:space-between;padding:5px;background:#15191d;font-size:.4rem}.damage-breakdown b{color:#c8b070}
 .artifact-power{color:#ce786e!important;font-size:.44rem!important;line-height:1.45}.artifact-power b{color:#e39a8f!important}.equipped-row .artifact-power{grid-column:1/-1;margin:3px 0 0}.artifact-list span{border-left-color:#a14e47!important;color:#b98780!important}
+.inventory-summary{grid-template-columns:repeat(4,1fr)}.equipped-row.equipment-eight{grid-template-columns:repeat(4,1fr)}.equipment-destinations{display:flex!important;flex-wrap:wrap;gap:5px;margin-top:9px}.equipment-destinations button{padding:6px 8px;border:1px solid #5c513a;background:#171a1e;color:#d5bc7c;font:600 .45rem Inter,sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}.equipment-destinations button:hover{border-color:#d5bc7c;background:#242015}
+@media(max-width:900px){.equipped-row.equipment-eight{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.inventory-summary{grid-template-columns:repeat(2,1fr)}.equipped-row.equipment-eight{grid-template-columns:1fr}.equipment-destinations{grid-column:1/-1}}
 @media(max-width:760px){.build-synergies,.mastery-tree,.build-presets{grid-template-columns:1fr}.mastery-header{align-items:flex-start;gap:10px}.mastery-header button{max-width:135px}.damage-breakdown{margin-left:30px}.damage-breakdown div{grid-template-columns:1fr 1fr}}
 
 /* Axe 4 — Sanctuaire vivant */

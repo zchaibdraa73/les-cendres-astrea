@@ -76,12 +76,16 @@ export function syncEquipmentProjection(save){
   save.inventory||=[];
   save.inventory.forEach(prepareItem);
   Object.values(save.equipped||{}).forEach(prepareItem);
+  Object.values(save.equipment||{}).forEach(prepareItem);
+  const canonical=save.equipmentModelVersion===EQUIPMENT_MODEL_VERSION&&save.equipment;
   save.equipmentModelVersion=EQUIPMENT_MODEL_VERSION;
-  save.equipment=projectEquipment(save.equipped||save.equipment);
+  save.equipment=projectEquipment(canonical||save.equipped||save.equipment);
   save.buildPresets||=[null,null,null];
   save.buildPresets=save.buildPresets.map(preset=>{
     if(!preset||typeof preset!=="object")return preset;
-    preset.equipmentV2=projectPresetEquipment(preset.equipmentV2||preset.equipment,save.inventory);
+    const canonicalPreset=preset.equipmentV2||preset.equipment;
+    preset.equipment=projectPresetEquipment(canonicalPreset,save.inventory);
+    preset.equipmentV2={...preset.equipment};
     return preset;
   });
   return save;

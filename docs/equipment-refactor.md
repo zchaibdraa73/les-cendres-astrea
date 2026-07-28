@@ -68,16 +68,30 @@ sauvegarde réelle.
 
 ## Migration version 29
 
-La version 29 utilise une transition en double écriture :
+La version 29 conserve l'ancien bloc `equipped` uniquement comme entrée de
+compatibilité pour les sauvegardes historiques. Dès que la migration est
+terminée :
 
-- `equipped` reste temporairement le bloc actif à trois emplacements pour que
-  l'interface actuelle ne change pas pendant la migration ;
-- `equipment` contient la projection cible complète des huit emplacements ;
+- `equipment` devient la source de vérité des huit emplacements ;
 - `equipmentModelVersion` vaut `1` ;
 - chaque objet sauvegardé reçoit son `equipType` ;
-- chaque présélection reçoit une projection `equipmentV2`.
+- chaque présélection est normalisée sur les huit identifiants stables ;
+- une instance dupliquée ou incompatible est automatiquement écartée.
 
-La projection est recalculée avant chaque sauvegarde pendant cette période. Une
-ancienne sauvegarde SHA-256 est d'abord authentifiée, puis migrée et enfin
-réenregistrée avec une nouvelle empreinte. L'axe suivant fera du bloc à huit
-emplacements la source de vérité du gameplay.
+Une ancienne sauvegarde SHA-256 est d'abord authentifiée, puis migrée et enfin
+réenregistrée avec une nouvelle empreinte. Les sauvegardes déjà migrées
+préservent leur bloc canonique au lieu de le recalculer depuis les trois anciens
+emplacements.
+
+## Règles actives depuis l'axe 3
+
+Le module `equipment-rules.mjs` centralise désormais les opérations du gameplay.
+Le moteur, la forge, le butin et les présélections passent tous par ces règles :
+
+- le joueur choisit explicitement la main ou la bague concernée ;
+- l'équipement automatique remplit d'abord un emplacement libre, puis compare
+  l'objet avec la pièce compatible la plus faible ;
+- vendre ou démanteler retire l'instance de son emplacement exact ;
+- statistiques, ensembles et artéfacts parcourent les huit emplacements sans
+  compter deux fois une même instance ;
+- une présélection ne peut charger qu'un objet possédé et compatible.

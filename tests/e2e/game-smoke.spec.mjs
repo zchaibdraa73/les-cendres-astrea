@@ -49,6 +49,12 @@ test("une nouvelle partie déterministe atteint la carte et produit une sauvegar
   expect(Object.keys(save.equipment)).toEqual(["head","chest","legs","mainHand","offHand","amulet","ring1","ring2"]);
   expect(save.run.difficulty).toBe("peril");
   expect(save.route.length).toBeGreaterThan(20);
+  await page.getByRole("button",{name:"Inventaire"}).click();
+  const equipmentGuide=page.getByRole("button",{name:"Compris"});
+  if(await equipmentGuide.isVisible()){await equipmentGuide.click();await page.getByRole("button",{name:"Inventaire"}).click()}
+  await expect(page.locator(".equipped-row.equipment-eight > div")).toHaveCount(8);
+  await expect(page.locator("#inventory-content")).toContainText("Main droite");
+  await expect(page.locator("#inventory-content")).toContainText("Bague 2");
   assertNoRuntimeErrors();
 });
 

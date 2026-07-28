@@ -10,6 +10,8 @@ import { formatStats, rarityInfo, itemDisplayName, nodeIcon, renderStatusBadges 
 import { resolveMutationProfiles, tuneCombatEnemies as tuneEnemyGroup, livingEnemies as findLivingEnemies, targetEnemy as selectCombatTarget } from "./src/combat/combat-helpers.mjs";
 import { assertSaveState, assertSaveBundle, validateGameContent, validateMapCatalog } from "./src/validation/game-schemas.mjs";
 import { migrateCatalogItem, migrateEquipmentSave, syncEquipmentProjection } from "./src/equipment/equipment-migration.mjs";
+import { EQUIPMENT_MODEL_VERSION, compatibleEquipmentSlots, createEmptyEquipment, equipmentSlotOrder, equipmentSlots, itemEquipTypes } from "./src/equipment/equipment-model.mjs";
+import { chooseEquipSlot, equipItem, equippedItems, findEquippedSlot, normalizeEquipment, sanitizePresetEquipment, sumEquipmentStats, unequipItem } from "./src/equipment/equipment-rules.mjs";
 import DOMPurify from "dompurify";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
@@ -28,7 +30,7 @@ const abilityCatalog=Object.fromEntries(Object.values(GAME_DATA.abilities).flat(
 const passiveCatalog=Object.fromEntries(Object.values(GAME_DATA.passives).flat().map(passive=>[passive.id,passive]));
 const statusCatalog=GAME_DATA.combat.statuses,abilityEffects=GAME_DATA.combat.abilityEffects,combatHazards=GAME_DATA.combat.hazards||[],combatMutations=GAME_DATA.combat.mutations||[];
 const buildData=GAME_DATA.builds;
-const makeItem=id=>{const item=clone(itemCatalog[id]),info=rarityInfo(item.rarity),chance={commun:.15,rare:.45,épique:.75,légendaire:1}[item.rarity]||0,affix=random()<chance?clone(rand(buildData.affixes)):null,setId=Object.entries(buildData.sets).find(([,set])=>set.items.includes(id))?.[0],baseStats=clone(item.stats);item.stats=GAME_RULES.applyAffix(baseStats,affix);return {...item,uid:`${id}-${Math.floor(random()*1e9).toString(36)}`,level:1,baseStats,affix,rune:null,setId,type:`${item.slot} · ${info.label}`,detail:formatStats(item.stats),rare:item.rarity!=="commun",color:info.color}};
+const makeItem=id=>{const item=clone(itemCatalog[id]),info=rarityInfo(item.rarity),chance={commun:.15,rare:.45,épique:.75,légendaire:1}[item.rarity]||0,affix=random()<chance?clone(rand(buildData.affixes)):null,setId=Object.entries(buildData.sets).find(([,set])=>set.items.includes(id))?.[0],baseStats=clone(item.stats);item.stats=GAME_RULES.applyAffix(baseStats,affix);return {...item,uid:`${id}-${Math.floor(random()*1e9).toString(36)}`,level:1,baseStats,affix,rune:null,setId,type:`${itemEquipmentLabel(item)} · ${info.label}`,detail:formatStats(item.stats),rare:item.rarity!=="commun",color:info.color}};
 const lootTable=GAME_DATA.items.filter(item=>["commun","rare"].includes(item.rarity)).map(item=>item.id);
 const eliteLoot=GAME_DATA.items.filter(item=>item.rarity==="épique").map(item=>item.id);
 const artifactLoot=GAME_DATA.items.filter(item=>item.rarity==="légendaire").map(item=>item.id);
@@ -98,9 +100,9 @@ function newState(h){
   const inputSeed=Number.parseInt($("#run-seed")?.value,10),seed=Number.isFinite(inputSeed)?inputSeed>>>0:seedValue(),active=GAME_DATA.abilities[h.id][0].id,passive=GAME_DATA.passives[h.id][0].id,meta=loadMeta(),baseRules=GAME_RULES.difficultyRules(selectedDifficulty),ascension=selectedAscension,rules={...baseRules,enemyHp:baseRules.enemyHp*(1+ascension*.045),enemyDamage:baseRules.enemyDamage*(1+ascension*.035),rewards:baseRules.rewards*(1+ascension*.025)},fragile=selectedModifier==="fragile";
   const run={startedAt:Date.now(),difficulty:selectedDifficulty,modifier:selectedModifier,ascension,daily:dailyMode,damageDealt:0,damageTaken:0,bossesDefeated:0,bossTrophies:[],optionalCleared:0,postureBreaks:0,guards:0,wavesCleared:0,hazardsTriggered:0};
   const next={version:SAVE_SYSTEM.CURRENT_VERSION,seed,rngState:seed,currentRegion:1,classId:h.id,level:1,xp:0,xpNext:xpForLevel(1),maxHp:Math.round(h.hp*(fragile?0.8:1)),hp:Math.round(h.hp*(fragile?0.8:1)),maxEnergy:h.energy,energy:h.energy,gold:0,potions:1+(meta.unlocks.includes("flask")?1:0),resources:Object.fromEntries(GAME_DATA.resources.map(r=>[r.id,0])),mapIndex:0,run,rules,
-    route:generateRoute(seed),cleared:[0],statBonuses:{Force:0,Agilité:0,Vitalité:0,Esprit:0},inventory:[],equipped:{Arme:null,Armure:null,Bijou:null},recipes:[],merchantStock:null,discoveries:{items:[],enemies:[],lore:["prologue"]},narrative:{reputation:{veilleurs:0,archivistes:0,sansOmbre:0},flags:[],questItems:[],decisions:[]},companions:{unlocked:["ilyra"],active:"ilyra",trust:{ilyra:0},equipment:{},milestones:{},relation:{},quests:{},dialogues:{},departed:[]},contracts:{offers:{},active:null,progress:0,completed:[],claimed:[]},nemesis:buildNemesis(seed),camp:{visits:0,buff:null,conversations:[],history:[]},campaign:{finalChoice:null,ending:null,completed:false,mapsExpanded:true},tutorial:{seen:[],enabled:true},learnedAbilities:[active],equippedAbilities:[active],abilityRanks:{[active]:1},abilityVariants:{},learnedPassives:[passive],equippedPassives:[passive],specializations:[],masteryNodes:[],buildPresets:[null,null,null],battlesWon:0};
+    route:generateRoute(seed),cleared:[0],statBonuses:{Force:0,Agilité:0,Vitalité:0,Esprit:0},inventory:[],equipmentModelVersion:EQUIPMENT_MODEL_VERSION,equipment:createEmptyEquipment(),recipes:[],merchantStock:null,discoveries:{items:[],enemies:[],lore:["prologue"]},narrative:{reputation:{veilleurs:0,archivistes:0,sansOmbre:0},flags:[],questItems:[],decisions:[]},companions:{unlocked:["ilyra"],active:"ilyra",trust:{ilyra:0},equipment:{},milestones:{},relation:{},quests:{},dialogues:{},departed:[]},contracts:{offers:{},active:null,progress:0,completed:[],claimed:[]},nemesis:buildNemesis(seed),camp:{visits:0,buff:null,conversations:[],history:[]},campaign:{finalChoice:null,ending:null,completed:false,mapsExpanded:true},tutorial:{seen:[],enabled:true},learnedAbilities:[active],equippedAbilities:[active],abilityRanks:{[active]:1},abilityVariants:{},learnedPassives:[passive],equippedPassives:[passive],specializations:[],masteryNodes:[],buildPresets:[null,null,null],battlesWon:0};
   if(meta.unlocks.includes("scavenger")){next.resources.iron=4;next.resources.ember=2}
-  if(meta.unlocks.includes("heirloom")){const starter={bastion:"iron_sword",traqueuse:"mist_dagger",arcaniste:"ember_staff",penitent:"soot_ring"}[h.id];const item=makeItem(starter);next.inventory.push(item);next.equipped[item.slot]=item}
+  if(meta.unlocks.includes("heirloom")){const starter={bastion:"iron_sword",traqueuse:"mist_dagger",arcaniste:"ember_staff",penitent:"soot_ring"}[h.id];const item=makeItem(starter);next.inventory.push(item);next.equipment=equipItem(next.equipment,item).equipment}
   applySanctuaryPreparation(next,meta);
   return next;
 }
@@ -114,7 +116,7 @@ function normalizeState(){
   state.resources ||= {};GAME_DATA.resources.forEach(resource=>state.resources[resource.id]??=0);
   state.level=Math.min(GAME_DATA.progression.maxLevel,state.level||1);state.xpNext=state.level>=GAME_DATA.progression.maxLevel?0:xpForLevel(state.level);
   state.route ||= generateRoute(state.seed); state.cleared ||= [0]; state.statBonuses ||= {Force:0,Agilité:0,Vitalité:0,Esprit:0};
-  state.inventory ||= []; state.equipped ||= {Arme:null,Armure:null,Bijou:null};state.recipes||=[];state.merchantStock??=null;state.discoveries||={};state.discoveries.items||=[];state.discoveries.enemies||=[];state.discoveries.lore||=["prologue"]; state.battlesWon ||= 0;
+  state.inventory ||= [];state.recipes||=[];state.merchantStock??=null;state.discoveries||={};state.discoveries.items||=[];state.discoveries.enemies||=[];state.discoveries.lore||=["prologue"]; state.battlesWon ||= 0;
   state.narrative||={};state.narrative.reputation||={veilleurs:0,archivistes:0,sansOmbre:0};state.narrative.flags||=[];state.narrative.questItems||=[];state.narrative.decisions||=[];
   state.companions||={unlocked:["ilyra"],active:"ilyra",trust:{ilyra:0},equipment:{}};state.companions.unlocked||=["ilyra"];state.companions.trust||={};state.companions.equipment||={};state.companions.milestones||={};state.companions.relation||={};state.companions.quests||={};state.companions.dialogues||={};state.companions.departed||=[];
   state.contracts||={offers:{},active:null,progress:0,completed:[],claimed:[]};state.contracts.offers||={};state.contracts.completed||=[];state.contracts.claimed||=[];state.contracts.progress||=0;
@@ -123,8 +125,9 @@ function normalizeState(){
   state.campaign||={finalChoice:null,ending:null,completed:false,mapsExpanded:true};state.campaign.finalChoice??=null;state.campaign.ending??=null;state.campaign.completed??=false;state.campaign.mapsExpanded=true;
   state.tutorial||={seen:[],enabled:true};state.tutorial.seen||=[];state.tutorial.enabled??=true;
   state.run ||= {startedAt:Date.now(),difficulty:"normal",modifier:"none",damageDealt:0,damageTaken:0,bossesDefeated:0,optionalCleared:0};state.run.bossTrophies||=[];state.run.wavesCleared??=0;state.run.hazardsTriggered??=0;state.rules ||= GAME_RULES.difficultyRules(state.run.difficulty);
-  state.inventory.forEach((item,index)=>{item.uid||=`legacy-${item.id||item.name}-${index}`;item.level||=1;item.color||=rarityInfo(item.rarity)?.color||"blanc";item.baseStats||=clone(itemCatalog[item.id]?.stats||item.stats||{});item.rune??=null;item.setId||=Object.entries(buildData.sets).find(([,set])=>set.items.includes(item.id))?.[0]});
-  Object.entries(state.equipped).forEach(([slot,item])=>{if(item&&!item.uid){const match=state.inventory.find(candidate=>candidate.id===item.id||candidate.name===item.name);state.equipped[slot]=match||item}});
+  state.inventory.forEach((item,index)=>{item.uid||=`legacy-${item.id||item.name}-${index}`;item.level||=1;item.color||=rarityInfo(item.rarity)?.color||"blanc";item.baseStats||=clone(itemCatalog[item.id]?.stats||item.stats||{});item.equipType||=itemCatalog[item.id]?.equipType;item.rune??=null;item.setId||=Object.entries(buildData.sets).find(([,set])=>set.items.includes(item.id))?.[0]});
+  syncEquipmentProjection(state);
+  state.equipment=normalizeEquipment(Object.fromEntries(equipmentSlotOrder.map(slotId=>{const item=state.equipment[slotId],match=item&&state.inventory.find(candidate=>candidate.uid===item.uid||(!item.uid&&(candidate.id===item.id||candidate.name===item.name)));return [slotId,match||item||null]})));
   state.mapIndex=Math.min(state.mapIndex||0,activeMapNodes().length-1); delete state.battleWon;
   syncLevelUnlocks(state.level);
 }
@@ -139,10 +142,10 @@ function learnedPassiveObjects(){return (state.equippedPassives||[]).map(id=>pas
 function specializationObjects(){return (state.specializations||[]).map(id=>Object.values(buildData.specializations[state.classId]||{}).flat().find(spec=>spec.id===id)).filter(Boolean)}
 function masteryObjects(){return (state.masteryNodes||[]).map(id=>(buildData.masteries[state.classId]||[]).find(node=>node.id===id)).filter(Boolean)}
 function artifactEffect(item){return item&&item.rarity==="légendaire"?buildData.artifactEffects?.[item.id]:null}
-function equippedArtifactEffects(){return Object.values(state.equipped||{}).map(artifactEffect).filter(Boolean)}
+function distinctEquippedDefinitions(){return equippedItems(state.equipment).filter((item,index,items)=>items.findIndex(candidate=>candidate.id===item.id)===index)}function equippedArtifactEffects(){return distinctEquippedDefinitions().map(artifactEffect).filter(Boolean)}
 function buildSources(){return [...specializationObjects(),...masteryObjects(),...equippedArtifactEffects()]}
 function abilityEvolution(ability){const variant=state.abilityVariants[ability?.id];return buildData.abilityEvolutions?.[state.classId]?.[variant]||null}
-function activeSetBonuses(){return GAME_RULES.resolveSetBonuses(Object.values(state.equipped).filter(Boolean).map(item=>item.setId).filter(Boolean),buildData.sets)}
+function activeSetBonuses(){return GAME_RULES.resolveSetBonuses(distinctEquippedDefinitions().map(item=>item.setId).filter(Boolean),buildData.sets)}
 function buildStats(){const total={Force:0,Agilité:0,Vitalité:0,Esprit:0};[...buildSources(),...activeSetBonuses()].forEach(source=>Object.entries(source.stats||{}).forEach(([key,value])=>total[key]+=value));return total}
 function passiveStats(){
   const total={Force:0,Agilité:0,Vitalité:0,Esprit:0};
@@ -150,7 +153,7 @@ function passiveStats(){
 }
 function gearStats(){
   const total={Force:0,Agilité:0,Vitalité:0,Esprit:0};
-  Object.values(state.equipped).filter(Boolean).forEach(item=>Object.entries(item.stats||{}).forEach(([k,v])=>total[k]+=Math.ceil(v*(1+((item.level||1)-1)*.25))));
+  Object.assign(total,sumEquipmentStats(state.equipment,item=>scaledItemStats(item)));
   return total;
 }
 function effectiveStats(){
@@ -393,7 +396,7 @@ function openEvent(type){
   if(type==="r2library")$("#event-reward").innerHTML="<b>Savoir noyé</b><span>+90 XP · +2 Verres de lune · +1 Fibre pâle</span>";
   if(type==="r2city")$("#event-reward").innerHTML="<b>Marché de la cité renversée</b><span>Restauration complète · +80 éclats · +1 Fragment stellaire</span>";
   if(type==="r2sanctum")$("#event-reward").innerHTML="<b>Mémoire rendue</b><span>+140 XP · +1 dans votre attribut principal</span>";
-  if(type==="r2forge"){const candidates=Object.values(state.equipped).filter(Boolean).sort((a,b)=>(a.level||1)-(b.level||1));pendingEvent.item=candidates[0]||null;$("#event-reward").innerHTML=pendingEvent.item?`<b>${pendingEvent.item.name}</b><span>Amélioration gratuite d'un niveau</span>`:"<b>Scories stellaires</b><span>+3 Verres de lune · +1 Fragment stellaire</span>"}
+  if(type==="r2forge"){const candidates=equippedItems(state.equipment).sort((a,b)=>(a.level||1)-(b.level||1));pendingEvent.item=candidates[0]||null;$("#event-reward").innerHTML=pendingEvent.item?`<b>${pendingEvent.item.name}</b><span>Amélioration gratuite d'un niveau</span>`:"<b>Scories stellaires</b><span>+3 Verres de lune · +1 Fragment stellaire</span>"}
   if(type==="r3entry")$("#event-reward").innerHTML="<b>La capitale vous reconnaît</b><span>Restauration complète · le dernier royaume est consigné</span>";
   if(type==="r3story")$("#event-reward").innerHTML="<b>Souvenir royal</b><span>+180 XP · un fragment de votre passé</span>";
   if(type==="r1memory")$("#event-reward").innerHTML="<b>Serment des Veilleurs</b><span>+120 XP · +2 Braises stables</span>";
@@ -476,10 +479,13 @@ function claimEvent(){
   clearCurrentNode();pendingEvent=null;closeOverlay();renderMap();updateHud();save();
 }
 function itemPower(item){return Object.values(item?.stats||{}).reduce((a,b)=>a+Math.ceil(b*(1+((item?.level||1)-1)*.25)),0)}
+function itemEquipmentIcon(item){return {head:"♟",chest:"♜",legs:"♞",weapon:"⚔",amulet:"◇",ring:"◉"}[item?.equipType]||"◇"}
+function itemEquipmentLabel(item){return itemEquipTypes[item?.equipType]?.label||item?.slot||"Équipement"}
 function addItem(item){
   if(!state.discoveries.items.includes(item.id))state.discoveries.items.push(item.id);
-  state.inventory.push(item);const current=state.equipped[item.slot];
-  if(!current||itemPower(item)>itemPower(current)){state.equipped[item.slot]=item;toast(`${item.name} équipé automatiquement.`)}
+  state.inventory.push(item);
+  const slotId=chooseEquipSlot(state.equipment,item,{scoreItem:itemPower}),current=slotId?state.equipment[slotId]:null;
+  if(slotId&&(!current||itemPower(item)>itemPower(current))){state.equipment=equipItem(state.equipment,item,{requestedSlot:slotId,scoreItem:itemPower}).equipment;toast(`${item.name} équipé automatiquement en ${equipmentSlots[slotId].label.toLowerCase()}.`)}
 }
 function clearCurrentNode(){
   if(state.cleared.includes(state.mapIndex))return;
@@ -498,7 +504,12 @@ function clearCurrentNode(){
     toast(`Quête de compagnon accomplie : ${companion.quest.name}.`);
   }
 }
-function smartItemId(ids){const owned=new Set(state.inventory.map(item=>item.id)),unique=ids.filter(id=>!owned.has(id)),pool=unique.length?unique:ids;if(!pool.length)return null;const weakest=["Arme","Armure","Bijou"].sort((a,b)=>itemPower(state.equipped[a])-itemPower(state.equipped[b]))[0],focused=pool.filter(id=>itemCatalog[id].slot===weakest);return random()<.7&&focused.length?rand(focused):rand(pool)}
+function smartItemId(ids){
+  const owned=new Set(state.inventory.map(item=>item.id)),unique=ids.filter(id=>!owned.has(id)),pool=unique.length?unique:ids;if(!pool.length)return null;
+  const coveredSlots=equipmentSlotOrder.filter(slotId=>pool.some(id=>compatibleEquipmentSlots(itemCatalog[id]).includes(slotId)));
+  const weakest=coveredSlots.sort((left,right)=>itemPower(state.equipment[left])-itemPower(state.equipment[right]))[0];
+  const focused=weakest?pool.filter(id=>compatibleEquipmentSlots(itemCatalog[id]).includes(weakest)):[];return random()<.7&&focused.length?rand(focused):rand(pool);
+}
 
 function updateHud(){
   const h=hero();$("#hud-portrait").style.background=h.art;$("#hud-class").textContent=h.name;$("#hud-level").textContent=`Niv. ${state.level}`;
@@ -511,7 +522,7 @@ function updateHud(){
   updateNemesisBadge();
   const campBuff=GAME_DATA.camp.buffs[state.camp.buff],campBadge=$("#camp-buff");campBadge.classList.toggle("hidden",!campBuff);campBadge.innerHTML=campBuff?`<span>${campBuff.icon}</span><div><small>PROCHAINE BATAILLE</small><b>${campBuff.name}</b></div>`:"";
 }
-function powerScore(){return state.level*10+Object.values(effectiveStats()).reduce((a,b)=>a+b,0)*3+Object.values(state.equipped).filter(Boolean).reduce((sum,item)=>sum+itemPower(item),0)+state.equippedAbilities.reduce((sum,id)=>sum+(state.abilityRanks[id]||1)*5,0)}
+function powerScore(){return state.level*10+Object.values(effectiveStats()).reduce((a,b)=>a+b,0)*3+equippedItems(state.equipment).reduce((sum,item)=>sum+itemPower(item),0)+state.equippedAbilities.reduce((sum,id)=>sum+(state.abilityRanks[id]||1)*5,0)}
 function nemesisTraits(){return state.nemesis.traits.map(id=>GAME_DATA.nemesis.traits.find(trait=>trait.id===id)).filter(Boolean)}
 function empowerNemesis(enemy){
   const nemesis=state.nemesis,traits=nemesisTraits(),hpBonus=(nemesis.rank-1)*.22+traits.reduce((sum,trait)=>sum+(trait.hp||0),0),damageBonus=(nemesis.rank-1)*.14+traits.reduce((sum,trait)=>sum+(trait.damage||0),0);
@@ -775,7 +786,7 @@ function claimVictory(){
   beginRewardDraft();
 }
 function abilityRarity(ability){const index=GAME_DATA.abilities[state.classId].findIndex(a=>a.id===ability.id);return index>=7?"légendaire":index>=5?"épique":index>=3?"rare":"commun"}
-function rewardFromItem(item){const worn=state.equipped[item.slot],delta=itemPower(item)-itemPower(worn);return {kind:"item",id:item.id,rarity:item.rarity,title:item.name,kicker:`${item.slot} · ${item.rarity}`,description:item.description,detail:`${formatStats(item.stats)} · ${delta>0?`+${delta} puissance`:delta<0?`${delta} puissance`:"puissance équivalente"}`}}
+function rewardFromItem(item){const slotId=chooseEquipSlot(state.equipment,item,{scoreItem:itemPower}),worn=slotId?state.equipment[slotId]:null,delta=itemPower(item)-itemPower(worn);return {kind:"item",id:item.id,rarity:item.rarity,title:item.name,kicker:`${item.equipType||item.slot} · ${item.rarity}`,description:item.description,detail:`${formatStats(item.stats)} · ${delta>0?`+${delta} puissance`:delta<0?`${delta} puissance`:"puissance équivalente"}`}}
 function beginRewardDraft(){
   const allowedRarities=pendingEvent.boss||pendingEvent.abyss?["épique","légendaire"]:pendingEvent.elite?["rare","épique"]:["commun","rare"];
   const classAbilities=GAME_DATA.abilities[state.classId],classPassives=GAME_DATA.passives[state.classId],skillPool=[];
@@ -887,9 +898,9 @@ function merchantStock(){if(state.merchantStock)return state.merchantStock;const
 function openForge(){if(showGuide("forge"))return;openPanel("forge")}
 function renderForge(){
   $("#forge-resources").innerHTML=GAME_DATA.resources.map(resource=>`<div><span>${resource.icon}</span><b>${state.resources[resource.id]||0}</b><small>${resource.name}</small></div>`).join("");
-  $("#forge-items").innerHTML=state.inventory.length?state.inventory.map((item,index)=>{item.level||=1;const info=rarityInfo(item.rarity),cost=forgeCost(item),limit=itemMaxLevel(item),max=item.level>=limit,sell=info.rank*15+item.level*8,salvage={iron:info.rank*2+item.level,ember:Math.max(0,info.rank-1),essence:info.rank>=3?1:0},next=max?null:scaledItemStats(item,item.level+1),enchantCost={ember:2+info.rank,essence:info.rank>=3?1:0};return `<article class="forge-item rarity-${info.color}"><div class="forge-item-head"><span>${item.slot==="Arme"?"⚔":item.slot==="Armure"?"♜":"◉"}</span><div><small>${info.label} · Niveau ${item.level}/${limit}${item.affix?` · ${item.affix.name}`:""}${item.rune?` · ${item.rune.icon} ${item.rune.name}`:""}</small><h3>${itemDisplayName(item)}</h3><p>${formatStats(scaledItemStats(item))}${next?` → <b>${formatStats(next)}</b>`:""}</p></div></div><div class="forge-cost">${max?"NIVEAU MAXIMUM":`Amélioration : ${formatResourceCost(cost)}`}</div><div class="forge-actions"><button data-forge-upgrade="${index}" ${max||!canAfford(cost)?"disabled":""}>${max?"Maximum":"Améliorer"}</button><button data-enchant="${index}" ${!canAfford(enchantCost)?"disabled":""}>Enchanter · ${formatResourceCost(enchantCost)}</button><button data-socket="${index}" ${item.rune?"disabled":""}>${item.rune?"Rune sertie":"Sertir une rune"}</button><button data-forge-sell="${index}">Vendre · ${sell} ◆</button><button data-forge-salvage="${index}">Démanteler · ${formatResourceCost(salvage)}</button></div></article>`}).join(""):`<div class="forge-empty">Votre inventaire ne contient aucun équipement à travailler.</div>`;
+  $("#forge-items").innerHTML=state.inventory.length?state.inventory.map((item,index)=>{item.level||=1;const info=rarityInfo(item.rarity),cost=forgeCost(item),limit=itemMaxLevel(item),max=item.level>=limit,sell=info.rank*15+item.level*8,salvage={iron:info.rank*2+item.level,ember:Math.max(0,info.rank-1),essence:info.rank>=3?1:0},next=max?null:scaledItemStats(item,item.level+1),enchantCost={ember:2+info.rank,essence:info.rank>=3?1:0};return `<article class="forge-item rarity-${info.color}"><div class="forge-item-head"><span>${itemEquipmentIcon(item)}</span><div><small>${itemEquipmentLabel(item)} · ${info.label} · Niveau ${item.level}/${limit}${item.affix?` · ${item.affix.name}`:""}${item.rune?` · ${item.rune.icon} ${item.rune.name}`:""}</small><h3>${itemDisplayName(item)}</h3><p>${formatStats(scaledItemStats(item))}${next?` → <b>${formatStats(next)}</b>`:""}</p></div></div><div class="forge-cost">${max?"NIVEAU MAXIMUM":`Amélioration : ${formatResourceCost(cost)}`}</div><div class="forge-actions"><button data-forge-upgrade="${index}" ${max||!canAfford(cost)?"disabled":""}>${max?"Maximum":"Améliorer"}</button><button data-enchant="${index}" ${!canAfford(enchantCost)?"disabled":""}>Enchanter · ${formatResourceCost(enchantCost)}</button><button data-socket="${index}" ${item.rune?"disabled":""}>${item.rune?"Rune sertie":"Sertir une rune"}</button><button data-forge-sell="${index}">Vendre · ${sell} ◆</button><button data-forge-salvage="${index}">Démanteler · ${formatResourceCost(salvage)}</button></div></article>`}).join(""):`<div class="forge-empty">Votre inventaire ne contient aucun équipement à travailler.</div>`;
   $("#crafting-items").innerHTML=buildData.recipes.map(recipe=>{const known=state.recipes.includes(recipe.id),item=itemCatalog[recipe.item];return `<article class="craft-card ${known?"":"locked"}"><span>⚒</span><div><small>${known?"RECETTE APPRISE":"RECETTE INCONNUE"}</small><h3>${known?item.name:"Plan non découvert"}</h3><p>${known?`${formatStats(item.stats)} · ${formatResourceCost(recipe.cost)}`:"Explorez les détours les plus dangereux."}</p></div><button data-craft="${recipe.id}" ${!known||!canAfford(recipe.cost)?"disabled":""}>Fabriquer</button></article>`}).join("");
-  $("#merchant-items").innerHTML=merchantStock().length?merchantStock().map((entry,index)=>{const item=itemCatalog[entry.id],info=rarityInfo(item.rarity);return `<article class="merchant-card rarity-${info.color}"><span>${item.slot==="Arme"?"⚔":item.slot==="Armure"?"♜":"◉"}</span><div><small>${info.label} · ${item.slot}</small><h3>${item.name}</h3><p>${formatStats(item.stats)}</p></div><button data-buy="${index}" ${state.gold<entry.price?"disabled":""}>${entry.price} ◆</button></article>`}).join(""):`<div class="forge-empty">Le marchand a vendu tout son stock.</div>`;
+  $("#merchant-items").innerHTML=merchantStock().length?merchantStock().map((entry,index)=>{const item=itemCatalog[entry.id],info=rarityInfo(item.rarity);return `<article class="merchant-card rarity-${info.color}"><span>${itemEquipmentIcon(item)}</span><div><small>${info.label} · ${itemEquipmentLabel(item)}</small><h3>${item.name}</h3><p>${formatStats(item.stats)}</p></div><button data-buy="${index}" ${state.gold<entry.price?"disabled":""}>${entry.price} ◆</button></article>`}).join(""):`<div class="forge-empty">Le marchand a vendu tout son stock.</div>`;
   $$("[data-forge-upgrade]").forEach(button=>button.onclick=()=>upgradeItem(+button.dataset.forgeUpgrade));
   $$("[data-forge-sell]").forEach(button=>button.onclick=()=>sellItem(+button.dataset.forgeSell));
   $$("[data-forge-salvage]").forEach(button=>button.onclick=()=>salvageItem(+button.dataset.forgeSalvage));
@@ -900,15 +911,15 @@ function renderForge(){
 }
 function upgradeItem(index){
   const item=state.inventory[index],cost=forgeCost(item);if(item.level>=itemMaxLevel(item)||!canAfford(cost))return;
-  Object.entries(cost).forEach(([id,amount])=>state.resources[id]-=amount);item.level++;if(state.equipped[item.slot]?.uid===item.uid)state.equipped[item.slot]=item;
+  Object.entries(cost).forEach(([id,amount])=>state.resources[id]-=amount);item.level++;
   save();renderForge();toast(`${item.name} atteint le niveau ${item.level}.`);
 }
 function sellItem(index){
   const item=state.inventory[index],info=rarityInfo(item.rarity),value=info.rank*15+(item.level||1)*8;
-  if(state.equipped[item.slot]?.uid===item.uid)state.equipped[item.slot]=null;
+  state.equipment=unequipItem(state.equipment,item).equipment;
   state.inventory.splice(index,1);state.gold+=value;state.hp=Math.min(state.hp,maxPlayerHp());state.energy=Math.min(state.energy,maxPlayerEnergy());save();renderForge();toast(`${item.name} vendu pour ${value} éclats.`);
 }
-function salvageItem(index){const item=state.inventory[index],rank=rarityInfo(item.rarity).rank,gains={iron:rank*2+(item.level||1),ember:Math.max(0,rank-1),essence:rank>=3?1:0};if(state.equipped[item.slot]?.uid===item.uid)state.equipped[item.slot]=null;state.inventory.splice(index,1);Object.entries(gains).forEach(([id,amount])=>state.resources[id]+=amount);state.hp=Math.min(state.hp,maxPlayerHp());state.energy=Math.min(state.energy,maxPlayerEnergy());save();renderForge();toast(`${itemDisplayName(item)} démantelé en matériaux.`)}
+function salvageItem(index){const item=state.inventory[index],rank=rarityInfo(item.rarity).rank,gains={iron:rank*2+(item.level||1),ember:Math.max(0,rank-1),essence:rank>=3?1:0};state.equipment=unequipItem(state.equipment,item).equipment;state.inventory.splice(index,1);Object.entries(gains).forEach(([id,amount])=>state.resources[id]+=amount);state.hp=Math.min(state.hp,maxPlayerHp());state.energy=Math.min(state.energy,maxPlayerEnergy());save();renderForge();toast(`${itemDisplayName(item)} démantelé en matériaux.`)}
 function enchantItem(index){const item=state.inventory[index],rank=rarityInfo(item.rarity).rank,cost={ember:2+rank,essence:rank>=3?1:0};if(!canAfford(cost))return;Object.entries(cost).forEach(([id,amount])=>state.resources[id]-=amount);let affix=rand(buildData.affixes);if(item.affix&&buildData.affixes.length>1)while(affix.id===item.affix.id)affix=rand(buildData.affixes);item.affix=clone(affix);rebuildItemStats(item);save();renderForge();toast(`${item.name} reçoit l'affixe ${affix.name}.`)}
 function socketItem(index){const item=state.inventory[index];if(item.rune)return;const rune=buildData.runes.find(candidate=>canAfford(candidate.cost));if(!rune){toast("Aucune rune ne peut être sertie avec vos ressources.");return}Object.entries(rune.cost).forEach(([id,amount])=>state.resources[id]-=amount);item.rune=clone(rune);rebuildItemStats(item);save();renderForge();toast(`${rune.name} sertie sur ${item.name}.`)}
 function craftRecipe(id){const recipe=buildData.recipes.find(entry=>entry.id===id);if(!recipe||!state.recipes.includes(id)||!canAfford(recipe.cost))return;Object.entries(recipe.cost).forEach(([resource,amount])=>state.resources[resource]-=amount);addItem(makeItem(recipe.item));save();renderForge();toast(`${itemCatalog[recipe.item].name} fabriqué.`)}
@@ -933,8 +944,19 @@ function renderProfile(){
   const h=hero(),stats=effectiveStats(),gear=gearStats(),passives=passiveStats(),xpPercent=state.xpNext?Math.round(state.xp/state.xpNext*100):100,explanations={Force:"Dégâts physiques et puissance des techniques de Force.",Agilité:"Chance de critique et techniques rapides.",Vitalité:"Réduction des dégâts et réserve de PV.",Esprit:"Puissance occulte et réserve d'énergie."},specs=specializationObjects(),masteries=masteryObjects(),artifacts=equippedArtifactEffects(),sets=activeSetBonuses();$("#profile-content").innerHTML=safeHtml`${panelNav("profile")}<section class="hero-identity"><div class="profile-portrait" style="background:${h.art}">♙</div><div><small>${h.role}</small><h3>${h.name}</h3><span>Niveau ${state.level} · Puissance ${powerScore()}</span></div></section><div class="hero-xp"><label><span>PROGRESSION</span><b>${state.level>=30?"NIVEAU MAX":`${state.xp} / ${state.xpNext} XP`}</b></label><div class="bar"><i style="width:${xpPercent}%"></i></div></div><div class="profile-resources"><span><i>♥</i><b>${state.hp} / ${maxPlayerHp()}</b><small>Points de vie</small></span><span><i>✦</i><b>${state.energy} / ${maxPlayerEnergy()}</b><small>Énergie</small></span><span><i>⚔</i><b>${playerDamage()}</b><small>Dégâts de base</small></span><span><i>◆</i><b>${state.gold}</b><small>Éclats</small></span></div><div class="derived-stats"><span><b>${Math.round(critChance()*100)} %</b> critique</span><span><b>${Math.floor(stats.Vitalité*.3)}</b> armure</span><span><b>${masteries.length}/${masteryPointCap()}</b> maîtrises</span><span><b>${state.equippedAbilities.length}/4</b> arsenal</span></div>${specs.length?`<div class="build-path">${specs.map(spec=>`<span><small>SPÉCIALISATION</small><b>${spec.name}</b><em>${spec.description}</em></span>`).join("")}</div>`:""}${masteries.length?`<div class="set-bonuses">${masteries.map(node=>`<span>✦ <b>${node.name}</b> · ${node.branch}</span>`).join("")}</div>`:""}${artifacts.length?`<div class="set-bonuses artifact-list">${artifacts.map(effect=>`<span>☗ <b>${effect.name}</b> · ${effect.description}</span>`).join("")}</div>`:""}${sets.length?`<div class="set-bonuses">${sets.map(set=>`<span>◆ <b>${set.name}</b> · bonus ${set.required} pièces actif</span>`).join("")}</div>`:""}<div class="section-heading"><h4>Attributs</h4><small>Base + équipement + passifs + build</small></div>${Object.entries(stats).map(([n,v])=>`<div class="profile-stat detailed"><span><b>${n}</b><small>${explanations[n]}</small><em>${h.stats[n]+(state.statBonuses[n]||0)} base · +${gear[n]||0} équipement · +${passives[n]||0} passifs</em></span><strong>${v}</strong></div>`).join("")}<div class="talent"><strong>Talent · ${h.talent}</strong><span>${h.talentText}</span></div>`;
 }
 function renderInventory(){
-  const slots=["Arme","Armure","Bijou"];$("#inventory-content").innerHTML=safeHtml`${panelNav("inventory")}<div class="inventory-summary"><span><small>ÉCLATS</small><b>◆ ${state.gold}</b></span><span><small>OBJETS</small><b>${state.inventory.length}</b></span><span><small>POTIONS</small><b>⚗ ${state.potions}</b></span></div><div class="material-mini">${GAME_DATA.resources.map(r=>`<span title="${r.name}">${r.icon} <b>${state.resources[r.id]||0}</b><small>${r.name}</small></span>`).join("")}</div><div class="section-heading"><h4>Équipement porté</h4><small>Bonus appliqués immédiatement</small></div><div class="equipped-row">${slots.map(s=>{const item=state.equipped[s],effect=artifactEffect(item);return `<div class="${item?`rarity-${item.color}`:""}"><small>${s}</small><span>${s==="Arme"?"⚔":s==="Armure"?"♜":"◉"}</span><b>${item?itemDisplayName(item):"Emplacement vide"}</b><em>${item?`${formatStats(scaledItemStats(item))} · Niv. ${item.level}${item.setId?` · ${buildData.sets[item.setId].name}`:""}`:"Aucun bonus"}</em>${effect?`<p class="artifact-power">☗ ${effect.name} · ${effect.description}</p>`:""}</div>`}).join("")}</div><div class="section-heading"><h4>Sac</h4><small>Cliquez sur un objet pour l'équiper</small></div><div class="inventory-grid">${state.inventory.map((item,i)=>{item.level||=1;const worn=state.equipped[item.slot],delta=itemPower(item)-itemPower(worn),info=rarityInfo(item.rarity),color=item.color||info?.color||"blanc",effect=artifactEffect(item);return `<button class="item-slot ${worn?.uid===item.uid?"equipped":""} rarity-${color}" data-equip="${i}"><span>${item.type.includes("Arme")?"⚔":item.type.includes("Armure")?"♜":"◉"}</span><div><small class="item-rarity">${info.label} · ${item.slot} · NIV. ${item.level}${item.setId?` · ENSEMBLE`:""}</small><b>${itemDisplayName(item)}</b><em>${formatStats(scaledItemStats(item))}</em><p>${item.setId?`${buildData.sets[item.setId].name} · `:""}${item.description||""}</p>${effect?`<p class="artifact-power">☗ <b>${effect.name}</b> · ${effect.description}</p>`:""}</div><strong>${worn?.uid===item.uid?"✓ ÉQUIPÉ":delta>0?`▲ +${delta} PUISSANCE`:delta<0?`▼ ${delta} PUISSANCE`:"= ÉQUIVALENT"}</strong></button>`}).join("")}<div class="item-slot consumable"><span>⚗</span><div><small>CONSOMMABLE</small><b>Potion mineure</b><em>x${state.potions} · Restaure 35 PV</em></div></div>${Array.from({length:Math.max(0,6-state.inventory.length-1)},()=>`<div class="item-slot empty">+</div>`).join("")}</div>`;
-  $$("[data-equip]").forEach(b=>b.onclick=()=>{const item=state.inventory[+b.dataset.equip];state.equipped[item.slot]=item;state.hp=Math.min(state.hp,maxPlayerHp());state.energy=Math.min(state.energy,maxPlayerEnergy());save();renderInventory();toast(`${item.name} équipé · statistiques mises à jour.`)});
+  $("#inventory-content").innerHTML=safeHtml`${panelNav("inventory")}<div class="inventory-summary"><span><small>ÉCLATS</small><b>◆ ${state.gold}</b></span><span><small>OBJETS</small><b>${state.inventory.length}</b></span><span><small>ÉQUIPÉS</small><b>${equippedItems(state.equipment).length}/8</b></span><span><small>POTIONS</small><b>⚗ ${state.potions}</b></span></div><div class="material-mini">${GAME_DATA.resources.map(r=>`<span title="${r.name}">${r.icon} <b>${state.resources[r.id]||0}</b><small>${r.name}</small></span>`).join("")}</div><div class="section-heading"><h4>Équipement porté</h4><small>Huit emplacements · bonus appliqués immédiatement</small></div><div class="equipped-row equipment-eight">${equipmentSlotOrder.map(slotId=>{const slot=equipmentSlots[slotId],item=state.equipment[slotId],effect=artifactEffect(item);return `<div class="${item?`rarity-${item.color}`:""}"><small>${slot.label}</small><span>${slot.icon}</span><b>${item?itemDisplayName(item):"Emplacement vide"}</b><em>${item?`${formatStats(scaledItemStats(item))} · Niv. ${item.level}${item.setId?` · ${buildData.sets[item.setId].name}`:""}`:"Aucun bonus"}</em>${effect?`<p class="artifact-power">☗ ${effect.name} · ${effect.description}</p>`:""}</div>`}).join("")}</div><div class="section-heading"><h4>Sac</h4><small>Choisissez précisément où porter chaque objet</small></div><div class="inventory-grid">${state.inventory.map((item,i)=>{item.level||=1;const currentSlot=findEquippedSlot(state.equipment,item),comparisonSlot=chooseEquipSlot(state.equipment,item,{scoreItem:itemPower}),worn=comparisonSlot?state.equipment[comparisonSlot]:null,delta=currentSlot?0:itemPower(item)-itemPower(worn),info=rarityInfo(item.rarity),color=item.color||info?.color||"blanc",effect=artifactEffect(item),destinations=compatibleEquipmentSlots(item);return `<article class="item-slot ${currentSlot?"equipped":""} rarity-${color}"><span>${itemEquipmentIcon(item)}</span><div><small class="item-rarity">${info.label} · ${itemEquipmentLabel(item)} · NIV. ${item.level}${item.setId?` · ENSEMBLE`:""}</small><b>${itemDisplayName(item)}</b><em>${formatStats(scaledItemStats(item))}</em><p>${item.setId?`${buildData.sets[item.setId].name} · `:""}${item.description||""}</p>${effect?`<p class="artifact-power">☗ <b>${effect.name}</b> · ${effect.description}</p>`:""}<div class="equipment-destinations">${destinations.map(slotId=>`<button data-equip-index="${i}" data-equip-slot="${slotId}">${currentSlot===slotId?"Retirer":equipmentSlots[slotId].label}</button>`).join("")}</div></div><strong>${currentSlot?`✓ ${equipmentSlots[currentSlot].label.toUpperCase()}`:delta>0?`▲ +${delta} PUISSANCE`:delta<0?`▼ ${delta} PUISSANCE`:"= ÉQUIVALENT"}</strong></article>`}).join("")}<div class="item-slot consumable"><span>⚗</span><div><small>CONSOMMABLE</small><b>Potion mineure</b><em>x${state.potions} · Restaure 35 PV</em></div></div>${Array.from({length:Math.max(0,6-state.inventory.length-1)},()=>`<div class="item-slot empty">+</div>`).join("")}</div>`;
+  $$("[data-equip-slot]").forEach(button=>button.onclick=()=>equipInventoryItem(+button.dataset.equipIndex,button.dataset.equipSlot));
+}
+function equipInventoryItem(index,slotId){
+  const item=state.inventory[index];if(!item)return;
+  const currentSlot=findEquippedSlot(state.equipment,item);
+  if(currentSlot===slotId){state.equipment=unequipItem(state.equipment,item).equipment;toast(`${item.name} retiré de ${equipmentSlots[slotId].label.toLowerCase()}.`)}else{
+    const result=equipItem(state.equipment,item,{requestedSlot:slotId,scoreItem:itemPower});
+    if(!result.changed){toast("Cet objet ne peut pas être placé ici.");return}
+    state.equipment=result.equipment;
+    toast(`${item.name} équipé en ${equipmentSlots[slotId].label.toLowerCase()}${result.replaced?` à la place de ${result.replaced.name}`:""}.`);
+  }
+  state.hp=Math.min(state.hp,maxPlayerHp());state.energy=Math.min(state.energy,maxPlayerEnergy());save();renderInventory();
 }
 function masteryPointCap(){return GAME_RULES.masteryPointsForLevel(state.level)}
 function renderMasteryTree(){
@@ -975,7 +997,7 @@ function chooseMastery(id){
   state.masteryNodes.push(id);state.hp=Math.min(state.hp,maxPlayerHp());state.energy=Math.min(state.energy,maxPlayerEnergy());save();renderSkills();toast(`Maîtrise acquise : ${node.name}.`);
 }
 function saveBuildPreset(index){
-  const slots=Object.fromEntries(Object.entries(state.equipped).map(([slot,item])=>[slot,item?.uid||null]));
+  const slots=Object.fromEntries(equipmentSlotOrder.map(slotId=>[slotId,state.equipment[slotId]?.uid||null]));
   state.buildPresets[index]={name:`Profil ${index+1} · ${hero().name.replace(/^(Le |La |L')/,"")}`,abilities:[...state.equippedAbilities],passives:[...state.equippedPassives],variants:{...state.abilityVariants},equipment:slots};
   save();renderSkills();toast(`Présélection ${index+1} enregistrée.`);
 }
@@ -983,7 +1005,8 @@ function activateBuildPreset(index){
   const preset=state.buildPresets[index];if(!preset)return;
   const valid=GAME_RULES.validateBuildPreset(preset,state.learnedAbilities,state.learnedPassives,state.inventory.map(item=>item.uid));
   if(valid.abilities.length)state.equippedAbilities=valid.abilities;if(valid.passives.length)state.equippedPassives=valid.passives;state.abilityVariants=valid.variants;
-  Object.entries(valid.equipment).forEach(([slot,uid])=>{state.equipped[slot]=uid?state.inventory.find(item=>item.uid===uid)||state.equipped[slot]:null});
+  const equipment=sanitizePresetEquipment(valid.equipment,state.inventory);
+  state.equipment=normalizeEquipment(Object.fromEntries(equipmentSlotOrder.map(slotId=>[slotId,equipment[slotId]?state.inventory.find(item=>item.uid===equipment[slotId])||null:null])));
   state.hp=Math.min(state.hp,maxPlayerHp());state.energy=Math.min(state.energy,maxPlayerEnergy());save();renderSkills();toast(`${preset.name} activé.`);
 }
 function resetBuild(){
@@ -1067,7 +1090,7 @@ function resolveCompanionMilestone(choice){
 }
 function showCompanionEquipment(id){
   const list=$("#companion-equipment-list"),items=state.inventory.filter(item=>!Object.entries(state.companions.equipment).some(([companionId,uid])=>companionId!==id&&uid===item.uid));
-  list.innerHTML=safeHtml`<div class="section-heading"><h4>Objet confié</h4><small>Un seul emplacement</small></div><button data-equip-companion="${id}" data-item-uid="">Retirer l'objet</button>${items.map(item=>`<button data-equip-companion="${id}" data-item-uid="${item.uid}"><b>${itemDisplayName(item)}</b><span>${item.slot} · +${Math.round(itemPower(item)*.4)} puissance</span></button>`).join("")}`;list.classList.remove("hidden");
+  list.innerHTML=safeHtml`<div class="section-heading"><h4>Objet confié</h4><small>Un seul emplacement</small></div><button data-equip-companion="${id}" data-item-uid="">Retirer l'objet</button>${items.map(item=>`<button data-equip-companion="${id}" data-item-uid="${item.uid}"><b>${itemDisplayName(item)}</b><span>${itemEquipmentLabel(item)} · +${Math.round(itemPower(item)*.4)} puissance</span></button>`).join("")}`;list.classList.remove("hidden");
 }
 function equipCompanionItem(id,uid){state.companions.equipment[id]=uid||null;save();renderCompanions();toast(uid?"Objet confié au compagnon.":"Objet retiré.")}
 function contractById(id){return GAME_DATA.contracts.find(contract=>contract.id===id)}
