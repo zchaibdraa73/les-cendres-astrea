@@ -291,12 +291,12 @@ test("le socle de développement est verrouillé et contrôlé",()=>{
     assert.match(packageJson.dependencies[dependency],/^\d+\.\d+\.\d+$/);
     assert.equal(lock.packages[`node_modules/${dependency}`].version,packageJson.dependencies[dependency]);
   }
-  for(const file of ["main.js","vite.config.mjs","eslint.config.mjs","playwright.config.mjs","tsconfig.json","tests/e2e/game-smoke.spec.mjs","src/content/classes.mjs","src/content/maps.mjs","src/content/narrative.mjs","src/config/game-options.mjs","src/services/player-storage.mjs","src/services/save-slots.mjs","src/services/audio-service.mjs","src/maps/world-navigation.mjs","src/ui/presenters.mjs","src/combat/combat-helpers.mjs","src/validation/game-schemas.mjs"])assert.ok(fs.existsSync(path.join(__dirname,"..",file)),`configuration manquante : ${file}`);
+  for(const file of ["main.js","vite.config.mjs","eslint.config.mjs","playwright.config.mjs","tsconfig.json","tests/e2e/game-smoke.spec.mjs","src/content/classes.mjs","src/content/maps.mjs","src/content/narrative.mjs","src/config/game-options.mjs","src/services/player-storage.mjs","src/services/save-slots.mjs","src/services/audio-service.mjs","src/maps/world-navigation.mjs","src/ui/presenters.mjs","src/ui/character-panels.mjs","src/combat/combat-helpers.mjs","src/validation/game-schemas.mjs"])assert.ok(fs.existsSync(path.join(__dirname,"..",file)),`configuration manquante : ${file}`);
 });
 
 test("game.js orchestre les sous-systèmes sans réembarquer leurs catalogues",()=>{
   assert.ok(source.split(/\r?\n/).length<1250);
-  for(const modulePath of ["content/classes.mjs","content/maps.mjs","content/narrative.mjs","services/player-storage.mjs","services/save-slots.mjs","services/audio-service.mjs","maps/world-navigation.mjs","ui/presenters.mjs","combat/combat-helpers.mjs","validation/game-schemas.mjs"])assert.ok(source.includes(modulePath),`import absent : ${modulePath}`);
+  for(const modulePath of ["content/classes.mjs","content/maps.mjs","content/narrative.mjs","services/player-storage.mjs","services/save-slots.mjs","services/audio-service.mjs","maps/world-navigation.mjs","ui/presenters.mjs","ui/character-panels.mjs","combat/combat-helpers.mjs","validation/game-schemas.mjs"])assert.ok(source.includes(modulePath),`import absent : ${modulePath}`);
   assert.ok(!source.includes("const audioScenes="));
   assert.ok(!source.includes("function normalizeMetaValue("));
   assert.ok(!source.includes("function nodeIcon("));

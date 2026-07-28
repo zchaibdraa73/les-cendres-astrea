@@ -52,9 +52,15 @@ test("une nouvelle partie déterministe atteint la carte et produit une sauvegar
   await page.getByRole("button",{name:"Inventaire"}).click();
   const equipmentGuide=page.getByRole("button",{name:"Compris"});
   if(await equipmentGuide.isVisible()){await equipmentGuide.click();await page.getByRole("button",{name:"Inventaire"}).click()}
-  await expect(page.locator(".equipped-row.equipment-eight > div")).toHaveCount(8);
+  await expect(page.locator("#inventory-content .character-loadout .loadout-slot")).toHaveCount(8);
   await expect(page.locator("#inventory-content")).toContainText("Main droite");
   await expect(page.locator("#inventory-content")).toContainText("Bague 2");
+  await expect(page.locator("#inventory-search")).toBeVisible();
+  await expect(page.locator("[data-inventory-group]")).toHaveCount(4);
+  await expect(page.locator("#inventory-sort")).toHaveValue("power");
+  await page.locator("#inventory-content [data-panel='profile']").click();
+  await expect(page.locator("#profile-content .character-loadout .loadout-slot")).toHaveCount(8);
+  await expect(page.locator("#profile-content .combat-stat-grid > span")).toHaveCount(6);
   assertNoRuntimeErrors();
 });
 
