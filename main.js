@@ -1,0 +1,13 @@
+import "@fontsource/cinzel/latin-500.css";
+import "@fontsource/cinzel/latin-600.css";
+import "@fontsource/cinzel/latin-700.css";
+import "@fontsource/inter/latin-400.css";
+import "@fontsource/inter/latin-500.css";
+import "@fontsource/inter/latin-600.css";
+import "./data.js";
+import "./engine.js";
+import "./state-system.js";
+import "./map-system.js";
+import "./balance-system.js";
+import "./validation-system.js";
+import "./game.js";

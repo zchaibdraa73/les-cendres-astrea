@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b0f">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; media-src 'self' data:; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'none'; form-action 'none'; manifest-src 'self'; worker-src 'self'">
+  <meta name="referrer" content="no-referrer">
+  <title>Les Cendres d'Astréa</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="grain"></div>
+  <main id="game">
+    <section id="main-menu" class="screen active">
+      <div class="menu-scene"><div class="moon"></div><div class="mountains"></div><div class="ruins"></div></div>
+      <div class="menu-content">
+        <p class="eyebrow">Un périple solitaire</p>
+        <h1><span>Les Cendres</span><em>d'Astréa</em></h1>
+        <p class="tagline">Chaque chute nourrit la prochaine ascension.</p>
+        <nav class="main-actions">
+          <button class="primary-button" data-action="new-game">Nouvelle partie</button>
+          <button id="continue-button" class="text-button" data-action="continue">Continuer <small id="save-label"></small></button>
+          <button class="text-button sanctuary-button" data-panel="sanctuary">Sanctuaire <small id="legacy-label">0 braises d'héritage</small></button>
+          <button class="text-button" data-panel="challenges">Défis et Ascension</button>
+          <button class="text-button" data-panel="saves">Sauvegardes</button>
+          <button class="text-button" data-panel="credits">Crédits</button>
+          <button class="text-button" data-panel="settings">Options</button>
+          <button class="text-button" data-action="quit">Quitter</button>
+        </nav>
+      </div>
+      <p class="version">RELEASE CANDIDATE · v3.0 RC1</p>
+    </section>
+
+    <section id="class-select" class="screen">
+      <header class="select-header">
+        <button class="back-button" data-action="menu">← <span>Retour</span></button>
+        <div><p class="eyebrow">Choisissez votre voie</p><h2>Qui portera la flamme ?</h2><p>Votre classe définit vos attributs et votre talent de départ.</p></div>
+        <div class="step">01 <span>/ 01</span></div>
+      </header>
+      <div class="class-layout">
+        <div id="class-cards" class="class-cards"></div>
+        <aside id="class-details" class="class-details" aria-live="polite"></aside>
+      </div>
+      <div class="expedition-setup">
+        <div><label for="run-seed">Graine d'expédition</label><input id="run-seed" maxlength="10" inputmode="numeric"><button data-action="random-seed">↻</button><button data-action="daily-seed">Quotidien</button></div>
+        <div id="difficulty-options" class="setup-options"></div>
+        <div id="modifier-options" class="setup-options"></div>
+        <div id="ascension-options" class="setup-options"></div>
+      </div>
+      <footer class="select-footer">
+        <p><kbd>←</kbd><kbd>→</kbd> Naviguer <kbd>Entrée</kbd> Confirmer</p>
+        <button id="confirm-class" class="primary-button">Embrasser cette voie</button>
+      </footer>
+    </section>
+
+    <section id="prologue" class="screen prologue-screen">
+      <div id="prologue-art" class="prologue-art"></div>
+      <div class="prologue-vignette"></div>
+      <button class="prologue-skip" data-action="skip-prologue">Passer le prologue</button>
+      <div class="prologue-content">
+        <p id="prologue-kicker" class="eyebrow">Il y a longtemps</p>
+        <div id="prologue-number" class="prologue-number">I</div>
+        <h2 id="prologue-title">Le monde portait un autre nom</h2>
+        <p id="prologue-copy"></p>
+        <div id="prologue-dots" class="prologue-dots"></div>
+        <button id="prologue-next" class="primary-button" data-action="next-slide">Continuer</button>
+        <small>Cliquez ou utilisez <kbd>Entrée</kbd></small>
+      </div>
+    </section>
+
+    <section id="exploration" class="screen game-screen">
+      <header class="game-header">
+        <div class="brand"><span>LES CENDRES</span><b>D'ASTRÉA</b></div>
+        <div class="location"><small>CHAPITRE I</small><strong>La Route des Cendres</strong></div>
+        <div class="header-actions">
+          <button class="icon-button" data-panel="profile" aria-label="Profil">♙</button>
+          <button class="icon-button" data-panel="inventory" aria-label="Inventaire">◇</button>
+          <button class="icon-button" data-panel="skills" aria-label="Compétences">✦</button>
+          <button class="icon-button" data-panel="companions" aria-label="Compagnons">♞</button>
+          <button class="icon-button contract-button" data-panel="contracts" aria-label="Contrats">⚑<span id="contract-notice"></span></button>
+          <button class="icon-button nemesis-button" data-panel="nemesis" aria-label="Némésis">☠<span id="nemesis-rank"></span></button>
+          <button class="icon-button" data-panel="codex" aria-label="Journal du monde">▤</button>
+          <button class="icon-button" data-panel="glossary" aria-label="Glossaire">?</button>
+          <button class="icon-button" data-action="pause" aria-label="Menu">☰</button>
+        </div>
+      </header>
+      <div class="explore-layout">
+        <aside class="hero-hud">
+          <div id="hud-portrait" class="hud-portrait"></div>
+          <div><small id="hud-class"></small><strong id="hud-name">Porteur de flamme</strong></div>
+          <div class="level-row"><span id="hud-level">Niv. 1</span><div class="mini-bar"><i id="hud-xp"></i></div><small id="hud-xp-label">0 / 100 XP</small></div>
+          <div class="resource"><label><span>♥ PV</span><b id="hud-hp-label"></b></label><div class="bar hp"><i id="hud-hp"></i></div></div>
+          <div class="resource"><label><span>✦ ÉNERGIE</span><b id="hud-energy-label"></b></label><div class="bar energy"><i id="hud-energy"></i></div></div>
+          <div class="power-rating"><small>PUISSANCE GLOBALE</small><b id="hud-power">0</b></div>
+          <div id="hud-materials" class="hud-materials"></div>
+          <div id="camp-buff" class="camp-buff hidden"></div>
+        </aside>
+        <div class="world">
+          <div class="world-sky"></div><div class="world-ridges"></div>
+          <div id="map" class="map" aria-label="Carte de la Route des Cendres"></div>
+          <button id="region-transition" class="region-transition" data-action="next-region"><span>→</span><b>Franchir le Voile</b><small>Continuer vers la deuxième région</small></button>
+          <div id="map-message" class="map-message"><small>OBJECTIF</small><strong>Suivez la route jusqu'aux ruines</strong><span>Utilisez ZQSD, les flèches ou cliquez sur une case voisine.</span></div>
+        </div>
+        <aside class="quest-panel">
+          <p class="eyebrow">Quête actuelle</p><h3>Les ruines silencieuses</h3>
+          <p id="quest-text">Traversez les terres mouvantes et rejoignez l'ancien autel.</p>
+          <div class="quest-progress"><i id="quest-progress"></i></div>
+          <small id="quest-count">0 / 16 étapes</small>
+          <div class="controls"><b>Se déplacer</b><span><kbd>ZQSD</kbd> ou <kbd>↑↓←→</kbd></span><span>Cliquez sur une case voisine</span></div>
+          <div class="map-legend"><b>Légende</b><span><i class="legend-main"></i> Route principale</span><span><i class="legend-optional"></i> Défi optionnel</span><span><i class="legend-abyss"></i> Zone abyssale</span></div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="combat" class="screen game-screen">
+      <header class="game-header">
+        <div class="brand"><span>LES CENDRES</span><b>D'ASTRÉA</b></div>
+        <div class="location"><small>COMBAT TUTORIEL</small><strong>L'Embuscade</strong></div>
+        <button class="icon-button" data-action="pause" aria-label="Menu">☰</button>
+      </header>
+      <div class="battlefield">
+        <div class="battle-scenery"></div>
+        <div id="combat-modifier" class="combat-modifier"></div>
+        <div class="combat-overview">
+          <div><small>TOUR</small><b id="battle-turn">1</b></div>
+          <div><small>PUISSANCE</small><b id="battle-power">0</b></div>
+          <div><small>CRITIQUE</small><b id="battle-crit">0 %</b></div>
+          <div><small>ARMURE</small><b id="battle-armor">0</b></div>
+          <div id="class-resource-card"><small id="class-resource-name">RESSOURCE</small><b id="class-resource-value">0 / 0</b></div>
+        </div>
+        <div class="fighter hero-fighter"><div id="battle-hero" class="fighter-art hero-art"></div><strong id="battle-hero-name"></strong><span id="hero-status"></span></div>
+        <div id="enemy-group" class="enemy-group"></div>
+        <div id="damage-layer"></div>
+        <div class="battle-bars">
+          <div class="hero-battle-bars">
+            <label><span>HÉROS</span><b id="battle-hp-label"></b></label><div class="bar hp"><i id="battle-hp"></i></div>
+            <label><span>ÉNERGIE</span><b id="battle-energy-label"></b></label><div class="bar energy"><i id="battle-energy"></i></div>
+          </div>
+          <div id="enemy-bars" class="enemy-bars"></div>
+        </div>
+        <div id="target-card" class="target-card"></div>
+        <div id="tutorial-box" class="tutorial-box">
+          <small>TUTORIEL <span id="tutorial-step">1 / 3</span></small>
+          <h3 id="tutorial-title">Frappez l'ennemi</h3><p id="tutorial-copy">Utilisez une attaque de base. Elle ne coûte aucune énergie.</p>
+        </div>
+        <div class="combat-console">
+          <div id="turn-label" class="turn-label">À VOTRE TOUR</div>
+          <div id="combat-actions" class="combat-actions">
+            <button data-combat="attack"><span class="action-icon">⚔</span><b>Attaque</b><small>0 énergie</small></button>
+            <button data-combat="guard"><span class="action-icon">◈</span><b>Garde</b><small>Réduit les dégâts</small></button>
+            <div id="ability-actions" class="ability-actions"></div>
+            <button data-combat="potion"><span class="action-icon">⚗</span><b>Potion</b><small id="potion-count">x1</small></button>
+          </div>
+          <div class="combat-log-strip">
+            <div id="combat-log" class="combat-log" role="status" aria-live="polite">Un Rôdeur des Cendres vous barre la route.</div>
+            <button class="combat-log-toggle" data-action="toggle-combat-log" aria-expanded="false">Journal <span>▴</span></button>
+          </div>
+          <div id="combat-history" class="combat-history" aria-label="Historique du combat"></div>
+        </div>
+      </div>
+    </section>
+
+    <div id="overlay" class="overlay" aria-hidden="true">
+      <div id="profile-panel" class="side-panel">
+        <button class="panel-close" data-action="close-panel">×</button><p class="eyebrow">Porteur de flamme</p><h2>Profil</h2>
+        <div id="profile-content"></div>
+      </div>
+      <div id="inventory-panel" class="side-panel">
+        <button class="panel-close" data-action="close-panel">×</button><p class="eyebrow">Équipement</p><h2>Inventaire</h2>
+        <div id="inventory-content"></div>
+      </div>
+      <div id="skills-panel" class="side-panel skills-panel">
+        <button class="panel-close" data-action="close-panel">×</button><p class="eyebrow">Arsenal intérieur</p><h2>Compétences</h2>
+        <div id="skills-content"></div>
+      </div>
+      <div id="companions-panel" class="side-panel companions-panel">
+        <button class="panel-close" data-action="close-panel">×</button>
+        <p class="eyebrow">Alliés de la route</p><h2>Compagnons</h2>
+        <div id="companions-content"></div>
+      </div>
+      <div id="contracts-panel" class="side-panel contracts-panel">
+        <button class="panel-close" data-action="close-panel">×</button>
+        <p class="eyebrow">Missions facultatives</p><h2>Contrats de la Route</h2>
+        <div id="contracts-content"></div>
+      </div>
+      <div id="nemesis-panel" class="side-panel nemesis-panel">
+        <button class="panel-close" data-action="close-panel">×</button>
+        <p class="eyebrow">Une haine qui apprend</p><h2>Votre Némésis</h2>
+        <div id="nemesis-content"></div>
+      </div>
+      <div id="challenges-panel" class="side-panel challenges-panel">
+        <button class="panel-close" data-action="close-panel">×</button>
+        <p class="eyebrow">Maîtrise du compte</p><h2>Défis et Ascension</h2>
+        <div id="challenges-content"></div>
+      </div>
+      <div id="saves-panel" class="side-panel">
+        <button class="panel-close" data-action="close-panel">×</button>
+        <p class="eyebrow">Profils locaux</p><h2>Sauvegardes</h2>
+        <div id="saves-content"></div>
+      </div>
+      <div id="credits-panel" class="modal-panel">
+        <p class="eyebrow">Version démonstration</p><h2>Les Cendres d’Astréa</h2>
+        <div class="credits-copy"><b>Conception et développement</b><p>Prototype créé avec Codex en collaboration avec son auteur.</p><b>Version</b><p>Démo publique 2.1 · Quatre régions · Campagne complète</p><b>Technologie</b><p>HTML, CSS et JavaScript sans dépendance externe.</p></div>
+        <button class="primary-button" data-action="close-panel">Fermer</button>
+      </div>
+      <div id="glossary-panel" class="side-panel glossary-panel">
+        <button class="panel-close" data-action="close-panel">×</button>
+        <p class="eyebrow">Aide de jeu</p><h2>Glossaire</h2>
+        <div id="glossary-content"></div>
+      </div>
+      <div id="guide-panel" class="modal-panel guide-panel">
+        <p id="guide-step" class="eyebrow">Nouveau système</p>
+        <div id="guide-icon" class="event-icon">?</div>
+        <h2 id="guide-title"></h2><p id="guide-copy"></p>
+        <button class="primary-button" data-action="guide-close">Compris</button>
+      </div>
+      <div id="companion-event-panel" class="modal-panel companion-event-panel">
+        <p id="companion-event-step" class="eyebrow">Confiance</p>
+        <div id="companion-event-icon" class="event-icon">♞</div>
+        <h2 id="companion-event-title"></h2><p id="companion-event-copy"></p>
+        <div id="companion-event-choices" class="event-choices"></div>
+      </div>
+      <div id="camp-panel" class="modal-panel camp-panel">
+        <p class="eyebrow">Une halte avant la nuit</p>
+        <div class="campfire-icon">♨</div>
+        <h2>Campement de la Route</h2>
+        <p>La nuit ne permet qu’une préparation. Choisissez ce que le héros emportera au prochain départ.</p>
+        <div id="camp-content"></div>
+      </div>
+      <div id="pause-panel" class="modal-panel">
+        <p class="eyebrow">Jeu en pause</p><h2>Le voyage attend</h2>
+        <button class="primary-button" data-action="resume">Reprendre</button>
+        <button class="text-button" data-panel="settings">Options et accessibilité</button>
+        <button class="text-button" data-action="training">Terrain d'entraînement</button>
+        <button class="text-button" data-action="advanced-training">Simulation tactique avancée</button>
+        <button class="text-button" data-action="save-menu">Sauvegarder et quitter</button>
+        <button class="text-button danger" data-action="abandon">Abandonner la partie</button>
+      </div>
+      <div id="victory-panel" class="modal-panel victory-panel">
+        <p class="eyebrow">Victoire</p><h2>La cendre retombe</h2><p>Votre première épreuve est accomplie.</p>
+        <div class="rewards"><div><span>✦</span><b>+100 XP</b><small>Expérience</small></div><div><span>◆</span><b>+25</b><small>Éclats</small></div><div><span>⚗</span><b>+1</b><small>Potion mineure</small></div></div>
+        <div id="level-up" class="level-up">NIVEAU SUPÉRIEUR — NIVEAU 2</div>
+        <button class="primary-button" data-action="claim">Récupérer et continuer</button>
+      </div>
+      <div id="event-panel" class="modal-panel event-panel">
+        <p id="event-eyebrow" class="eyebrow">Découverte</p><div id="event-icon" class="event-icon">◆</div>
+        <h2 id="event-title">Un secret sur la route</h2><p id="event-copy"></p>
+        <div id="event-reward" class="event-reward"></div>
+        <div id="event-choices" class="event-choices hidden"></div>
+        <button class="primary-button" data-action="event-claim">Récupérer</button>
+      </div>
+      <div id="level-panel" class="modal-panel level-panel">
+        <p class="eyebrow">Puissance accrue</p><h2 id="level-title">Niveau supérieur</h2>
+        <p>La flamme qui sommeille en vous devient plus vive.</p>
+        <div id="level-gains" class="level-gains"></div>
+        <button class="primary-button" data-action="level-close">Continuer</button>
+      </div>
+      <div id="reward-panel" class="modal-panel reward-panel">
+        <p class="eyebrow">Choisissez votre récompense</p>
+        <h2>La cendre offre trois voies</h2>
+        <p>Une seule pourra vous accompagner. Choisissez selon votre construction actuelle.</p>
+        <div id="reward-choices" class="reward-choices"></div>
+        <button class="text-button reward-skip" data-action="skip-reward">Refuser les trois · <span id="skip-value">+20</span> éclats</button>
+      </div>
+      <div id="forge-panel" class="modal-panel forge-panel">
+        <button class="panel-close" data-action="close-forge">×</button>
+        <p class="eyebrow">Cendrebourg · Quartier des forges</p>
+        <h2>La Forge du Dernier Feu</h2>
+        <p>Améliorez vos armes et équipements jusqu'au niveau 5, ou vendez ce dont vous n'avez plus besoin.</p>
+        <div id="forge-resources" class="forge-resources"></div>
+        <nav class="forge-tabs"><button data-forge-tab="upgrade" class="active">Améliorer</button><button data-forge-tab="craft">Fabriquer</button><button data-forge-tab="merchant">Marchand</button></nav>
+        <div id="forge-items" class="forge-items"></div>
+        <div id="crafting-items" class="forge-items hidden"></div>
+        <div id="merchant-items" class="forge-items hidden"></div>
+        <button class="primary-button" data-action="close-forge">Quitter la forge</button>
+      </div>
+      <div id="sanctuary-panel" class="modal-panel sanctuary-panel">
+        <button class="panel-close" data-action="close-panel">×</button>
+        <p class="eyebrow">Hameau entre les expéditions</p><h2>Sanctuaire des Braises</h2>
+        <p>Restaurez ses bâtiments, retrouvez ses habitants et exposez les traces de vos voyages. Chaque retour change ce lieu sans effacer le danger de la Route.</p>
+        <div id="sanctuary-content"></div>
+      </div>
+      <div id="summary-panel" class="modal-panel summary-panel">
+        <p class="eyebrow">Fin de l'expédition</p><h2 id="summary-title">La route se souvient</h2>
+        <div id="summary-content"></div>
+        <button class="primary-button" data-action="summary-menu">Retour au menu principal</button>
+      </div>
+      <div id="ending-panel" class="modal-panel ending-panel">
+        <p class="eyebrow">Le Brasier attend votre réponse</p>
+        <div class="ending-crown">♚</div>
+        <h2>Que doit devenir le monde ?</h2>
+        <p>Le Maître des Cendres abandonne la couronne. Vos voyages, vos alliances et vos décisions déterminent les issues encore possibles.</p>
+        <div id="ending-context" class="ending-context"></div>
+        <div id="ending-choices" class="ending-choices"></div>
+      </div>
+      <div id="specialization-panel" class="modal-panel specialization-panel">
+        <p class="eyebrow">Évolution de classe</p><h2>Choisissez votre voie</h2>
+        <p>Ce choix façonnera définitivement cette expédition.</p>
+        <div id="specialization-choices"></div>
+      </div>
+      <div id="codex-panel" class="side-panel codex-panel">
+        <button class="panel-close" data-action="close-panel">×</button><p class="eyebrow">Mémoire du voyageur</p><h2>Journal du monde</h2>
+        <div id="codex-content"></div>
+      </div>
+      <div id="settings-panel" class="modal-panel settings-panel">
+        <button class="panel-close" data-action="close-panel">×</button><p class="eyebrow">Confort de jeu</p><h2>Options</h2>
+        <div id="settings-content"></div>
+      </div>
+    </div>
+    <div id="error-banner" class="error-banner hidden" role="alert"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="audio-caption" class="audio-caption" role="status" aria-live="polite"></div>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
