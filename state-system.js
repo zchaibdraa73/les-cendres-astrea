@@ -3,16 +3,20 @@
   if(typeof module==="object"&&module.exports)module.exports=api;
   root.SAVE_SYSTEM=api;
 })(typeof globalThis!=="undefined"?globalThis:this,function(){
-  const CURRENT_VERSION=28;
+  const CURRENT_VERSION=29;
   const INTEGRITY_VERSION=1;
   const clone=value=>JSON.parse(JSON.stringify(value));
   let validators={save:null,bundle:null};
   let integrity={digest:null};
+  let migrationHandlers={equipment:null};
   function setValidators(next={}){
     validators={save:typeof next.save==="function"?next.save:null,bundle:typeof next.bundle==="function"?next.bundle:null};
   }
   function setIntegrity(next={}){
     integrity={digest:typeof next.digest==="function"?next.digest:null};
+  }
+  function setMigrationHandlers(next={}){
+    migrationHandlers={equipment:typeof next.equipment==="function"?next.equipment:null};
   }
   function assertValid(kind,value){
     if(validators[kind])validators[kind](value);
@@ -82,7 +86,20 @@
     25(save){save.campaign||={finalChoice:null,ending:null,completed:false};save.campaign.mapsExpanded=true;return save},
     26(save){save.run||={};save.run.wavesCleared??=0;save.run.hazardsTriggered??=0;return save},
     27(save){save.masteryNodes||=[];save.buildPresets||=[null,null,null];return save},
-    28(save){save.run||={};save.run.bossTrophies||=[];return save}
+    28(save){save.run||={};save.run.bossTrophies||=[];return save},
+    29(save){
+      if(migrationHandlers.equipment)return migrationHandlers.equipment(save)||save;
+      const empty={head:null,chest:null,legs:null,mainHand:null,offHand:null,amulet:null,ring1:null,ring2:null};
+      const legacyTypes={Arme:["weapon","mainHand"],Armure:["chest","chest"],Bijou:["ring","ring1"]};
+      save.inventory||=[];
+      save.inventory.forEach(item=>{if(item&&legacyTypes[item.slot])item.equipType||=legacyTypes[item.slot][0]});
+      save.equipment={...empty};
+      for(const [slot,[equipType,target]] of Object.entries(legacyTypes)){
+        const item=save.equipped?.[slot];if(item){item.equipType||=equipType;save.equipment[target]=item}
+      }
+      save.equipmentModelVersion=1;
+      return save;
+    }
   };
   function migrate(raw){
     raw=unprotect(raw,"save");
@@ -117,5 +134,5 @@
     const normalized={bundleVersion:1,createdAt:String(bundle.createdAt||""),activeSlot:Math.min(3,Math.max(1,Math.trunc(bundle.activeSlot)||1)),slots:normalizeSlots(bundle.slots,"Sauvegarde"),backups:normalizeSlots(bundle.backups||[],"Copie de secours"),meta:clone(bundle.meta),settings:clone(bundle.settings)};
     return assertValid("bundle",normalized);
   }
-  return {CURRENT_VERSION,INTEGRITY_VERSION,setValidators,setIntegrity,assertSafeTree,canonicalStringify,migrate,safeParse,serialize,createBundle,parseBundle};
+  return {CURRENT_VERSION,INTEGRITY_VERSION,setValidators,setIntegrity,setMigrationHandlers,assertSafeTree,canonicalStringify,migrate,safeParse,serialize,createBundle,parseBundle};
 });

@@ -148,6 +148,7 @@ const savedItemSchema=z.object({
   name:label.optional(),
   uid:z.string().min(1).max(180).optional(),
   slot:z.enum(["Arme","Armure","Bijou"]).optional(),
+  equipType:z.enum(["head","chest","legs","weapon","amulet","ring"]).optional(),
   rarity:z.enum(["commun","rare","épique","légendaire"]).optional(),
   level:z.number().int().positive().max(20).optional(),
   stats:statBlock.optional(),
@@ -155,6 +156,17 @@ const savedItemSchema=z.object({
 }).passthrough().refine(item=>Boolean(item.id||item.name),{
   message:"Un équipement sauvegardé doit posséder un identifiant ou un nom",
 });
+
+const equipmentStateSchema=z.object({
+  head:z.union([savedItemSchema,z.null()]),
+  chest:z.union([savedItemSchema,z.null()]),
+  legs:z.union([savedItemSchema,z.null()]),
+  mainHand:z.union([savedItemSchema,z.null()]),
+  offHand:z.union([savedItemSchema,z.null()]),
+  amulet:z.union([savedItemSchema,z.null()]),
+  ring1:z.union([savedItemSchema,z.null()]),
+  ring2:z.union([savedItemSchema,z.null()]),
+}).strict();
 
 export const saveStateSchema=z.object({
   version:z.number().int().min(11).max(10_000),
@@ -177,6 +189,8 @@ export const saveStateSchema=z.object({
   cleared:z.array(nonNegativeInteger).optional(),
   inventory:z.array(savedItemSchema).max(1000).optional(),
   equipped:z.record(z.string(),z.union([savedItemSchema,z.null()])).optional(),
+  equipmentModelVersion:z.literal(1).optional(),
+  equipment:equipmentStateSchema.optional(),
   learnedAbilities:stringList.optional(),
   equippedAbilities:stringList.max(4).optional(),
   learnedPassives:stringList.optional(),

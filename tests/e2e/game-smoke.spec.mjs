@@ -45,7 +45,8 @@ test("une nouvelle partie déterministe atteint la carte et produit une sauvegar
   expect(envelope).toMatchObject({integrityVersion:1,algorithm:"SHA-256",kind:"save"});
   expect(envelope.checksum).toMatch(/^[a-f0-9]{64}$/);
   const save=envelope.payload;
-  expect(save).toMatchObject({version:28,classId:"arcaniste",seed:424242,currentRegion:1,level:1});
+  expect(save).toMatchObject({version:29,classId:"arcaniste",seed:424242,currentRegion:1,level:1,equipmentModelVersion:1});
+  expect(Object.keys(save.equipment)).toEqual(["head","chest","legs","mainHand","offHand","amulet","ring1","ring2"]);
   expect(save.run.difficulty).toBe("peril");
   expect(save.route.length).toBeGreaterThan(20);
   assertNoRuntimeErrors();
@@ -80,7 +81,7 @@ test("une sauvegarde principale corrompue est restaurée depuis sa copie",async(
   await expect(page.locator("#exploration")).toBeVisible();
   await expect(page.locator("#toast")).toContainText("réparée depuis la copie de secours");
   const restored=await page.evaluate(()=>JSON.parse(localStorage.getItem("astrea-save-v3-slot-1")).payload);
-  expect(restored).toMatchObject({version:28,classId:"bastion",seed:98765});
+  expect(restored).toMatchObject({version:29,classId:"bastion",seed:98765,equipmentModelVersion:1});
   assertNoRuntimeErrors();
 });
 

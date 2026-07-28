@@ -65,3 +65,19 @@ sauvegarde réelle.
 - les identifiants des emplacements restent stables dans les sauvegardes ;
 - les armes à deux mains, boucliers et focalisateurs pourront être ajoutés plus
   tard sans renommer les huit emplacements.
+
+## Migration version 29
+
+La version 29 utilise une transition en double écriture :
+
+- `equipped` reste temporairement le bloc actif à trois emplacements pour que
+  l'interface actuelle ne change pas pendant la migration ;
+- `equipment` contient la projection cible complète des huit emplacements ;
+- `equipmentModelVersion` vaut `1` ;
+- chaque objet sauvegardé reçoit son `equipType` ;
+- chaque présélection reçoit une projection `equipmentV2`.
+
+La projection est recalculée avant chaque sauvegarde pendant cette période. Une
+ancienne sauvegarde SHA-256 est d'abord authentifiée, puis migrée et enfin
+réenregistrée avec une nouvelle empreinte. L'axe suivant fera du bloc à huit
+emplacements la source de vérité du gameplay.

@@ -9,18 +9,20 @@ import { createWorldNavigation } from "./src/maps/world-navigation.mjs";
 import { formatStats, rarityInfo, itemDisplayName, nodeIcon, renderStatusBadges } from "./src/ui/presenters.mjs";
 import { resolveMutationProfiles, tuneCombatEnemies as tuneEnemyGroup, livingEnemies as findLivingEnemies, targetEnemy as selectCombatTarget } from "./src/combat/combat-helpers.mjs";
 import { assertSaveState, assertSaveBundle, validateGameContent, validateMapCatalog } from "./src/validation/game-schemas.mjs";
+import { migrateCatalogItem, migrateEquipmentSave, syncEquipmentProjection } from "./src/equipment/equipment-migration.mjs";
 import DOMPurify from "dompurify";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
 
 SAVE_SYSTEM.setValidators({save:assertSaveState,bundle:assertSaveBundle});
 SAVE_SYSTEM.setIntegrity({digest:value=>bytesToHex(sha256(new TextEncoder().encode(value)))});
+SAVE_SYSTEM.setMigrationHandlers({equipment:migrateEquipmentSave});
 VALIDATION_SYSTEM.setSchemaValidator(validateGameContent);
 const worldNavigation=createWorldNavigation({mapSystem:MAP_SYSTEM,maps:{1:regionOneNodes,2:regionTwoNodes,3:regionThreeNodes,4:regionFourNodes}});
 const activeMapNodes=()=>worldNavigation.nodesFor(state?.currentRegion||1);
 const regionMeta=()=>worldNavigation.detailsFor(state?.currentRegion||1);
 const validateWorld=()=>worldNavigation.validate();
-const itemCatalog=Object.fromEntries(GAME_DATA.items.map(item=>[item.id,item]));
+const itemCatalog=Object.fromEntries(GAME_DATA.items.map(item=>[item.id,migrateCatalogItem(item)]));
 const enemyCatalog=Object.fromEntries(GAME_DATA.enemies.map(enemy=>[enemy.id,enemy]));
 const abilityCatalog=Object.fromEntries(Object.values(GAME_DATA.abilities).flat().map(ability=>[ability.id,ability]));
 const passiveCatalog=Object.fromEntries(Object.values(GAME_DATA.passives).flat().map(passive=>[passive.id,passive]));
@@ -174,7 +176,7 @@ const activeSlot=saveSlots.activeSlot;
 const slotKey=saveSlots.slotKey;
 const backupSlotKey=saveSlots.backupKey;
 function save(){
-  if(state)saveSlots.persist(state);updateContinue();
+  if(state){syncEquipmentProjection(state);saveSlots.persist(state)}updateContinue();
 }
 function load(){
   const restored=saveSlots.restore();state=restored.state;if(restored.recovered)toast("Sauvegarde principale réparée depuis la copie de secours.");

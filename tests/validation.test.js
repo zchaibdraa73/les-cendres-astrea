@@ -28,7 +28,7 @@ test("les sauvegardes aux valeurs dangereuses sont rejetées avec leur chemin",a
 test("le moteur de sauvegarde applique les schémas après chaque migration",async()=>{
   const {assertSaveState,assertSaveBundle}=await import("../src/validation/game-schemas.mjs");
   saveSystem.setValidators({save:assertSaveState,bundle:assertSaveBundle});
-  assert.equal(saveSystem.safeParse(JSON.stringify({version:26,classId:"arcaniste",level:12,run:{}})).version,28);
+  assert.equal(saveSystem.safeParse(JSON.stringify({version:26,classId:"arcaniste",level:12,run:{}})).version,29);
   assert.equal(saveSystem.safeParse(JSON.stringify({version:28,classId:"bastion",level:"12"})),null);
   assert.equal(saveSystem.safeParse(JSON.stringify({version:28,classId:"intrus"})),null);
   assert.throws(()=>saveSystem.serialize({classId:"bastion",level:99}),/Sauvegarde invalide/);
