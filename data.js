@@ -380,7 +380,18 @@ globalThis.GAME_DATA = {
       asterion_eye:{name:"Regard de l'étoile morte",description:"+15 % contre les ennemis affaiblis et +8 % aux techniques.",debuffDamage:.15,abilityDamage:.08},
       unwritten_weapon:{name:"Arme sans origine",description:"+15 % de dégâts directs et +20 % de posture.",damageBonus:.15,postureBonus:.2},
       last_guardian_mail:{name:"Trône vacant",description:"+25 PV et Garde renforcée.",maxHp:25,guardBonus:.12},
-      true_name_seal:{name:"Reconnaissance",description:"+3 énergie et toutes les techniques gagnent 12 % de puissance.",maxEnergy:3,abilityDamage:.12}
+      true_name_seal:{name:"Reconnaissance",description:"+3 énergie et toutes les techniques gagnent 12 % de puissance.",maxEnergy:3,abilityDamage:.12},
+      roadless_steps:{name:"Marche hors des cartes",description:"+5 % de critique et +8 % contre les ennemis affaiblis.",critBonus:.05,debuffDamage:.08},
+      veilkeeper_helm:{name:"Vigie du Voile",description:"La Garde et les Barrières sont renforcées.",guardBonus:.06,barrierBonus:.15},
+      gravityless_steps:{name:"Pas sans poids",description:"+6 % de critique et +8 % aux techniques.",critBonus:.06,abilityDamage:.08},
+      crown_of_whispers:{name:"Ordre murmuré",description:"+2 énergie et effets de ressource renforcés.",maxEnergy:2,resourceBonus:.1},
+      thronebound_steps:{name:"Marche du souverain",description:"+22 PV et Garde renforcée.",maxHp:22,guardBonus:.08},
+      scepter_of_mute_king:{name:"Décret silencieux",description:"+12 % de dégâts directs et de posture.",damageBonus:.12,postureBonus:.12},
+      crown_heart:{name:"Cœur dynastique",description:"+20 PV et +10 % de puissance contre les cibles affaiblies.",maxHp:20,debuffDamage:.1},
+      nameless_diadem:{name:"Autorité sans nom",description:"Toutes les ressources de classe sont 14 % plus efficaces.",resourceBonus:.14},
+      steps_before_dawn:{name:"Premier pas du monde",description:"+8 % de critique et +10 % aux soins.",critBonus:.08,healingBonus:.1},
+      hero_unmade_amulet:{name:"Présence impossible",description:"+3 énergie et +12 % aux techniques.",maxEnergy:3,abilityDamage:.12},
+      oathbreaker_blade:{name:"Serment tranché",description:"+16 % de dégâts directs et +18 % de posture.",damageBonus:.16,postureBonus:.18}
     },
     affixes: [
       {id:"force",name:"du Titan",stats:{Force:2}},
@@ -390,9 +401,12 @@ globalThis.GAME_DATA = {
       {id:"balanced",name:"du Voyageur",stats:{Force:1,Agilité:1,Vitalité:1,Esprit:1}}
     ],
     sets: {
-      veil:{name:"Vestiges du Voile",items:["veil_fragment","keeper_hide","well_scepter"],bonuses:{2:{stats:{Esprit:3,Vitalité:3}},3:{maxEnergy:2,stats:{Esprit:4}}}},
-      mirror:{name:"Reflets impossibles",items:["mirror_knives","mirror_coat","upward_drop"],bonuses:{2:{stats:{Agilité:4}},3:{stats:{Agilité:3,Esprit:3}}}},
-      ash:{name:"Héritage des Cendres",items:["ash_crown","first_flame","forgotten_mail"],bonuses:{2:{stats:{Force:3,Vitalité:3}},3:{maxHp:20,stats:{Force:3}}}}
+      veil:{name:"Vestiges du Voile",items:["veil_fragment","keeper_hide","well_scepter","veilkeeper_helm","gravityless_steps"],bonuses:{2:{stats:{Esprit:3,Vitalité:3}},3:{maxEnergy:2,stats:{Esprit:4}}}},
+      mirror:{name:"Reflets impossibles",items:["mirror_knives","mirror_coat","upward_drop","mirror_hood","inverted_sabatons"],bonuses:{2:{stats:{Agilité:4}},3:{stats:{Agilité:3,Esprit:3}}}},
+      ash:{name:"Héritage des Cendres",items:["ash_crown","first_flame","forgotten_mail"],bonuses:{2:{stats:{Force:3,Vitalité:3}},3:{maxHp:20,stats:{Force:3}}}},
+      watcher:{name:"Dernière Veille",items:["ember_visor","watcher_greaves","silent_oath"],bonuses:{2:{stats:{Vitalité:3,Force:2}},3:{maxHp:15,stats:{Esprit:3}}}},
+      royal:{name:"Cour sans Visage",items:["crown_of_whispers","royal_ash_plate","thronebound_steps","crown_heart"],bonuses:{2:{stats:{Force:4,Vitalité:3}},4:{maxHp:24,stats:{Esprit:5}}}},
+      cycle:{name:"Serment du Premier Monde",items:["nameless_diadem","steps_before_dawn","hero_unmade_amulet","oathbreaker_blade","last_guardian_mail","true_name_seal"],bonuses:{3:{stats:{Force:5,Agilité:5,Vitalité:5,Esprit:5}},5:{maxHp:30,maxEnergy:3,stats:{Esprit:5}}}}
     },
     runes: [
       {id:"rune_force",name:"Rune de Frappe",icon:"ᚠ",stats:{Force:2},cost:{iron:5,ember:2}},
@@ -404,7 +418,15 @@ globalThis.GAME_DATA = {
       {id:"recipe_vein_spear",name:"Schéma de la Lance-veine",item:"vein_spear",cost:{iron:14,pale_fiber:6,moon_glass:2}},
       {id:"recipe_tide_blades",name:"Schéma des Lames célestes",item:"tide_blades",cost:{iron:16,pale_fiber:5,moon_glass:5}},
       {id:"recipe_inverted_robe",name:"Patron de la Robe renversée",item:"inverted_robe",cost:{pale_fiber:8,moon_glass:6,essence:1}},
-      {id:"recipe_archive_hammer",name:"Plan du Marteau d'archive",item:"archive_hammer",cost:{iron:20,moon_glass:4,star_fragment:1}}
+      {id:"recipe_archive_hammer",name:"Plan du Marteau d'archive",item:"archive_hammer",cost:{iron:20,moon_glass:4,star_fragment:1}},
+      {id:"recipe_watcher_greaves",name:"Plan des Grèves du Veilleur",item:"watcher_greaves",cost:{iron:10,ember:3}},
+      {id:"recipe_charred_striders",name:"Patron des Jambières calcinées",item:"charred_striders",cost:{iron:12,ember:5,pale_fiber:2}},
+      {id:"recipe_tidewalk_greaves",name:"Plan des Grèves de marée",item:"tidewalk_greaves",cost:{iron:14,pale_fiber:6,moon_glass:4}},
+      {id:"recipe_veilkeeper_helm",name:"Plan du Heaume du Veilleur du Voile",item:"veilkeeper_helm",cost:{iron:18,moon_glass:7,essence:2}},
+      {id:"recipe_royal_ash_plate",name:"Plan de la Cuirasse royale",item:"royal_ash_plate",cost:{iron:20,ember:6,essence:2}},
+      {id:"recipe_executioner_greaves",name:"Plan des Grèves du bourreau",item:"executioner_greaves",cost:{iron:18,ember:5,essence:2}},
+      {id:"recipe_oathbound_greaves",name:"Plan des Grèves du Serment",item:"oathbound_greaves",cost:{iron:22,moon_glass:6,star_fragment:2}},
+      {id:"recipe_returning_ring",name:"Formule de l'Anneau du Retour",item:"returning_ring",cost:{moon_glass:8,essence:3,star_fragment:2}}
     ]
   },
   items: [
@@ -469,7 +491,47 @@ globalThis.GAME_DATA = {
     {id:"memory_knot",name:"Nœud de mémoire",slot:"Bijou",rarity:"épique",region:4,stats:{Agilité:4,Vitalité:4,Esprit:6},description:"Trois voix familières y retiennent un nom incomplet."},
     {id:"unwritten_weapon",name:"Arme qui ne fut jamais forgée",slot:"Arme",rarity:"légendaire",region:4,stats:{Force:8,Agilité:8,Esprit:5},description:"Le monde ne possède aucun souvenir de sa création."},
     {id:"last_guardian_mail",name:"Harnois du Dernier Gardien",slot:"Armure",rarity:"légendaire",region:4,stats:{Vitalité:11,Force:5,Esprit:5},description:"Sa surface reflète un trône vide et une route ouverte."},
-    {id:"true_name_seal",name:"Sceau du Nom véritable",slot:"Bijou",rarity:"légendaire",region:4,stats:{Force:6,Agilité:6,Vitalité:6,Esprit:10},description:"Le porter donne l'impression d'avoir enfin été reconnu."}
+    {id:"true_name_seal",name:"Sceau du Nom véritable",slot:"Bijou",rarity:"légendaire",region:4,stats:{Force:6,Agilité:6,Vitalité:6,Esprit:10},description:"Le porter donne l'impression d'avoir enfin été reconnu."},
+
+    {id:"patched_hood",name:"Capuche aux sept reprises",slot:"Armure",equipType:"head",rarity:"commun",stats:{Agilité:2},description:"Chaque couture marque une route dont personne n'est revenu."},
+    {id:"roadworn_greaves",name:"Grèves du marcheur gris",slot:"Armure",equipType:"legs",rarity:"commun",stats:{Vitalité:2},description:"Elles grincent au rythme d'un pas qui n'est pas toujours le vôtre."},
+    {id:"ember_visor",name:"Visière de la dernière veille",slot:"Armure",equipType:"head",rarity:"rare",stats:{Force:3,Vitalité:2},description:"Une braise protégée éclaire encore l'intérieur du casque."},
+    {id:"watcher_greaves",name:"Grèves du Veilleur",slot:"Armure",equipType:"legs",rarity:"rare",stats:{Vitalité:4,Force:1},description:"Leur métal porte les marques de longues gardes sans relève."},
+    {id:"fanal_ring",name:"Anneau du fanal éteint",slot:"Bijou",equipType:"ring",rarity:"rare",stats:{Vitalité:2,Esprit:3},description:"Sa pierre se réchauffe lorsque la route devient dangereuse."},
+    {id:"charred_striders",name:"Jambières des pas calcinés",slot:"Armure",equipType:"legs",rarity:"épique",stats:{Agilité:5,Force:3},description:"La cendre refuse de se déposer sur leurs plaques noircies."},
+    {id:"silent_oath",name:"Médaillon du serment muet",slot:"Bijou",equipType:"amulet",rarity:"épique",stats:{Esprit:5,Vitalité:3},description:"Un serment illisible y est gravé sous plusieurs couches de suie."},
+    {id:"roadless_steps",name:"Bottes de la route absente",slot:"Armure",equipType:"legs",rarity:"légendaire",stats:{Agilité:8,Esprit:6},description:"Elles laissent des traces sur les cartes plutôt que sur le sol."},
+
+    {id:"pale_root_leggings",name:"Jambières de racine pâle",slot:"Armure",equipType:"legs",rarity:"commun",region:2,stats:{Vitalité:2,Esprit:1},description:"Les fibres se resserrent doucement autour des blessures."},
+    {id:"mirror_hood",name:"Capuchon du reflet tardif",slot:"Armure",equipType:"head",rarity:"rare",region:2,stats:{Agilité:3,Esprit:3},description:"Son reflet continue de bouger après que vous vous êtes arrêté."},
+    {id:"inverted_sabatons",name:"Solerets de la cité renversée",slot:"Armure",equipType:"legs",rarity:"rare",region:2,stats:{Agilité:4,Vitalité:2},description:"Leurs semelles adhèrent aux chemins qui montent vers le ciel."},
+    {id:"moon_glass_ring",name:"Bague de verre lunaire",slot:"Bijou",equipType:"ring",rarity:"rare",region:2,stats:{Esprit:4,Agilité:2},description:"Une lune minuscule tourne dans le cristal sans jamais se lever."},
+    {id:"tidewalk_greaves",name:"Grèves de la marée céleste",slot:"Armure",equipType:"legs",rarity:"épique",region:2,stats:{Agilité:6,Esprit:3},description:"Chaque pas semble repoussé par une mer suspendue."},
+    {id:"drowned_choir",name:"Reliquaire du chœur noyé",slot:"Bijou",equipType:"amulet",rarity:"épique",region:2,stats:{Esprit:6,Vitalité:3},description:"Des voix étouffées y reprennent un hymne qui ne possède pas de fin."},
+    {id:"veilkeeper_helm",name:"Heaume du Veilleur du Voile",slot:"Armure",equipType:"head",rarity:"légendaire",region:2,stats:{Vitalité:7,Esprit:6},description:"Sa visière montre l'endroit exact où le monde se déchire."},
+    {id:"gravityless_steps",name:"Pas sans pesanteur",slot:"Armure",equipType:"legs",rarity:"légendaire",region:2,stats:{Agilité:8,Esprit:6},description:"Le porteur ne tombe plus tout à fait dans la même direction que le monde."},
+
+    {id:"cinder_helm",name:"Heaume des légions ensevelies",slot:"Armure",equipType:"head",rarity:"rare",region:3,stats:{Force:4,Vitalité:3},description:"De la poussière royale s'échappe encore de ses jointures."},
+    {id:"crown_of_whispers",name:"Couronne des ordres murmurés",slot:"Armure",equipType:"head",rarity:"légendaire",region:3,stats:{Esprit:8,Force:6,Vitalité:5},description:"Chaque pointe formule un ordre différent, toujours avec votre voix."},
+    {id:"masked_cuirass",name:"Cuirasse des gardes masqués",slot:"Armure",equipType:"chest",rarity:"rare",region:3,stats:{Vitalité:5,Agilité:2},description:"Son plastron ne reflète jamais le visage de celui qui la porte."},
+    {id:"royal_ash_plate",name:"Cuirasse de la cour consumée",slot:"Armure",equipType:"chest",rarity:"épique",region:3,stats:{Vitalité:7,Force:4},description:"Une procession de souverains disparus est gravée sous la cendre."},
+    {id:"executioner_greaves",name:"Grèves du bourreau sans visage",slot:"Armure",equipType:"legs",rarity:"rare",region:3,stats:{Force:4,Vitalité:3},description:"Elles s'arrêtent toujours à la distance exacte d'une sentence."},
+    {id:"thronebound_steps",name:"Solerets liés au trône",slot:"Armure",equipType:"legs",rarity:"légendaire",region:3,stats:{Vitalité:8,Esprit:6,Force:5},description:"Des chaînes invisibles les tirent vers une salle d'audience en ruine."},
+    {id:"edict_blade",name:"Lame du dernier édit",slot:"Arme",equipType:"weapon",rarity:"rare",region:3,stats:{Force:5,Esprit:2},description:"Le décret qu'elle porte condamne un nom soigneusement effacé."},
+    {id:"scepter_of_mute_king",name:"Sceptre du roi silencieux",slot:"Arme",equipType:"weapon",rarity:"légendaire",region:3,stats:{Force:8,Esprit:8,Agilité:3},description:"Il impose le silence avant même de toucher le sol."},
+    {id:"mourning_medallion",name:"Médaillon des héritiers en deuil",slot:"Bijou",equipType:"amulet",rarity:"épique",region:3,stats:{Esprit:6,Vitalité:5},description:"Il contient les portraits de descendants qui ne sont jamais nés."},
+    {id:"crown_heart",name:"Cœur de la Couronne",slot:"Bijou",equipType:"amulet",rarity:"légendaire",region:3,stats:{Force:6,Vitalité:6,Esprit:7},description:"Il bat une fois chaque fois qu'un souverain est oublié."},
+    {id:"verdict_ring",name:"Anneau du verdict blanc",slot:"Bijou",equipType:"ring",rarity:"rare",region:3,stats:{Force:3,Agilité:2,Esprit:2},description:"La sentence gravée à l'intérieur change selon celui qui la lit."},
+    {id:"maskbinder_loop",name:"Bague du lieur de masques",slot:"Bijou",equipType:"ring",rarity:"épique",region:3,stats:{Agilité:5,Esprit:4,Vitalité:2},description:"Elle serre le doigt lorsque quelqu'un prononce un faux nom."},
+
+    {id:"cycle_hood",name:"Capuche cousue au Cycle",slot:"Armure",equipType:"head",rarity:"épique",region:4,stats:{Esprit:7,Agilité:5},description:"Ses fils suivent le dessin exact de vos vies antérieures."},
+    {id:"nameless_diadem",name:"Diadème de l'autorité sans nom",slot:"Armure",equipType:"head",rarity:"légendaire",region:4,stats:{Force:6,Agilité:6,Vitalité:6,Esprit:8},description:"Il reconnaît un souverain que l'histoire refuse pourtant de nommer."},
+    {id:"oathbound_greaves",name:"Grèves du Premier Serment",slot:"Armure",equipType:"legs",rarity:"épique",region:4,stats:{Vitalité:8,Force:4},description:"Chaque plaque porte une promesse prononcée avant la naissance du monde."},
+    {id:"steps_before_dawn",name:"Solerets d'avant l'aube",slot:"Armure",equipType:"legs",rarity:"légendaire",region:4,stats:{Agilité:9,Esprit:7,Vitalité:5},description:"Ils se souviennent d'un chemin parcouru avant qu'il existe une lumière."},
+    {id:"memory_locket",name:"Médaillon des mémoires liées",slot:"Bijou",equipType:"amulet",rarity:"épique",region:4,stats:{Esprit:7,Vitalité:5},description:"Les voix de vos compagnons y maintiennent un souvenir intact."},
+    {id:"hero_unmade_amulet",name:"Amulette du héros qui ne fut pas",slot:"Bijou",equipType:"amulet",rarity:"légendaire",region:4,stats:{Force:5,Agilité:5,Vitalité:5,Esprit:10},description:"Elle porte le contour précis d'une personne retirée du monde."},
+    {id:"oathbreaker_blade",name:"Lame qui trancha le Serment",slot:"Arme",equipType:"weapon",rarity:"légendaire",region:4,stats:{Force:10,Agilité:7,Esprit:5},description:"Sa première blessure sépara le héros de son propre nom."},
+    {id:"returning_ring",name:"Anneau de l'éternel retour",slot:"Bijou",equipType:"ring",rarity:"épique",region:4,stats:{Force:3,Agilité:3,Vitalité:3,Esprit:3},description:"Une date différente apparaît à chaque nouvelle expédition."}
   ],
   resources: [
     {id:"iron",name:"Fer ancien",icon:"⬢",description:"Métal récupéré dans les ruines. Base de toute amélioration."},

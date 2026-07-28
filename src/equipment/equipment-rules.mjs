@@ -2,6 +2,7 @@ import {
   compatibleEquipmentSlots,
   createEmptyEquipment,
   equipmentSlotOrder,
+  equipmentSlots,
   isCompatibleEquipmentSlot,
 } from "./equipment-model.mjs";
 
@@ -14,6 +15,11 @@ function sameItem(left,right){
 /** @param {unknown} _item */
 function defaultScoreItem(_item){
   return 0;
+}
+
+/** @param {{stats?: Record<string,number>}|null} item @param {string|null} _slotId */
+function defaultScaleItem(item,_slotId){
+  return item?.stats||{};
 }
 
 export function equippedEntries(equipment={}){
@@ -97,14 +103,23 @@ export function unequipItem(equipment={},itemOrUid=null){
   return {equipment:normalized,slotId,item,changed:true};
 }
 
-export function sumEquipmentStats(equipment={},scaleItem=item=>item?.stats||{}){
+export function sumEquipmentStats(equipment={},scaleItem=defaultScaleItem){
   const totals={};
   for(const item of equippedItems(equipment)){
-    for(const [stat,value] of Object.entries(scaleItem(item)||{})){
+    const slotId=findEquippedSlot(equipment,item);
+    for(const [stat,value] of Object.entries(scaleItem(item,slotId)||{})){
       totals[stat]=(totals[stat]||0)+(Number(value)||0);
     }
   }
   return totals;
+}
+
+export function scaleEquipmentStatsForSlot(stats={},slotId=null){
+  const share=equipmentSlots[slotId]?.groupShare??1;
+  return Object.fromEntries(Object.entries(stats).map(([stat,value])=>[
+    stat,
+    Math.ceil((Number(value)||0)*share),
+  ]));
 }
 
 export function sanitizePresetEquipment(equipment={},inventory=[]){

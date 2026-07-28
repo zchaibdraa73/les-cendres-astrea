@@ -28,22 +28,31 @@ Chaque groupe conserve un budget global réparti entre ses emplacements :
 - armes : main droite 60 %, main gauche 40 % ;
 - bijoux : amulette 40 %, chaque bague 30 %.
 
-Ces coefficients serviront au rééquilibrage du catalogue. Ils ne modifient pas
-encore les statistiques du jeu.
+Ces coefficients sont maintenant appliqués au calcul des statistiques portées.
+Une valeur d'objet est d'abord améliorée selon son niveau, puis pondérée par
+l'emplacement qui l'accueille. Un groupe entièrement équipé conserve ainsi un
+budget proche de l'ancien objet unique.
 
 ## État du catalogue actuel
 
-Le catalogue de départ contient 62 objets :
+Le catalogue contient désormais 98 objets : les 62 pièces historiques et
+36 nouvelles pièces déclarées directement avec leur `equipType`.
 
-- 24 armes ;
-- 18 armures ;
-- 20 bijoux.
+| Région | Objets | Tête | Torse | Jambes | Armes | Amulettes | Bagues |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Route des Cendres | 32 | 4 | 7 | 4 | 10 | 4 | 3 |
+| Contrées du Voile | 40 | 4 | 9 | 4 | 12 | 7 | 4 |
+| Royaume sous la Cendre | 12 | 2 | 2 | 2 | 2 | 2 | 2 |
+| Brasier Originel | 14 | 2 | 2 | 2 | 3 | 2 | 3 |
 
-Le classement préparatoire place les 24 armes dans le type `weapon`, les
-18 armures actuelles sur le torse, quatre anciens bijoux visuels sur la tête,
-neuf bijoux en amulettes et sept en bagues. Aucune ancienne pièce ne correspond
-réellement aux jambes : cet emplacement sera donc alimenté par le nouveau
-contenu plutôt que par un renommage artificiel.
+Les jambes existent aux quatre raretés. Les nouvelles pièces alimentent aussi
+onze pouvoirs d'artéfact, trois nouveaux ensembles et huit recettes de forge.
+
+Le classement préparatoire place les 24 armes historiques dans le type
+`weapon`, les 18 anciennes armures sur le torse, quatre anciens bijoux visuels
+sur la tête, neuf bijoux en amulettes et sept en bagues. Aucune ancienne pièce
+ne correspondait réellement aux jambes : cet emplacement est donc alimenté par
+du nouveau contenu plutôt que par un renommage artificiel.
 
 L'audit a relevé 59 usages directs de l'ancien modèle dans le moteur, les
 schémas, les interfaces et les tests. Les objets seront reclassés explicitement

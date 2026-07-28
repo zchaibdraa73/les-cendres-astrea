@@ -95,8 +95,9 @@ export function validateLegacyItemClassification(items){
   const catalogIds=new Set(items.map(item=>item.id));
   for(const id of classifiedIds)if(!catalogIds.has(id))errors.push(`Équipement classé absent du catalogue : ${id}`);
   for(const item of items){
-    const equipType=legacyItemEquipTypeById[item.id];
-    if(!equipType)errors.push(`Équipement historique non classé : ${item.id}`);
+    const legacyType=legacyItemEquipTypeById[item.id],equipType=legacyType||resolveEquipType(item);
+    if(!equipType)errors.push(`Équipement sans type cible : ${item.id}`);
+    else if(!legacyType&&!item.equipType)errors.push(`Nouvel équipement sans type explicite : ${item.id}`);
     else if(!itemEquipTypes[equipType])errors.push(`Type cible inconnu pour ${item.id} : ${equipType}`);
   }
   return errors;

@@ -228,6 +228,14 @@ test("les builds avancés couvrent maîtrises, transformations et présélection
   assert.ok(source.includes("function abilityDamageBreakdown("));
 });
 
+test("chaque artéfact du catalogue enrichi possède un pouvoir dédié",()=>{
+  const legendary=globalThis.GAME_DATA.items.filter(item=>item.rarity==="légendaire");
+  assert.ok(legendary.length>=25);
+  legendary.forEach(item=>assert.ok(globalThis.GAME_DATA.builds.artifactEffects[item.id],`pouvoir d'artéfact absent : ${item.id}`));
+  assert.ok(Object.keys(globalThis.GAME_DATA.builds.sets).length>=6);
+  assert.ok(globalThis.GAME_DATA.builds.recipes.length>=12);
+});
+
 test("le Sanctuaire possède quatre bâtiments évolutifs et une méta-progression horizontale",()=>{
   const sanctuary=globalThis.GAME_DATA.sanctuary;
   assert.equal(sanctuary.buildings.length,4);

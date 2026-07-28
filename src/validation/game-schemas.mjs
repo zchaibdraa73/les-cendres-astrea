@@ -14,6 +14,7 @@ const itemSchema=z.object({
   id:identifier,
   name:label,
   slot:z.enum(["Arme","Armure","Bijou"]),
+  equipType:z.enum(["head","chest","legs","weapon","amulet","ring"]).optional(),
   rarity:z.enum(["commun","rare","épique","légendaire"]),
   stats:statBlock,
   description:z.string().trim().min(1).max(600),

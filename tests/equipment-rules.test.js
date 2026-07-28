@@ -55,6 +55,22 @@ test("le calcul de statistiques ignore les références dupliquées",async()=>{
   assert.deepEqual(totals,{Force:4,Esprit:3});
 });
 
+test("le budget de puissance est réparti entre les emplacements d'un groupe",async()=>{
+  const {scaleEquipmentStatsForSlot,sumEquipmentStats}=await import("../src/equipment/equipment-rules.mjs");
+  const armor={uid:"armor",equipType:"head",stats:{Vitalité:20}};
+  const equipment={
+    head:armor,
+    chest:{uid:"chest",equipType:"chest",stats:{Vitalité:20}},
+    legs:{uid:"legs",equipType:"legs",stats:{Vitalité:20}},
+    mainHand:weapon("right",20),
+    offHand:weapon("left",20),
+  };
+  const totals=sumEquipmentStats(equipment,(item,slotId)=>scaleEquipmentStatsForSlot(item.stats,slotId));
+  assert.equal(totals.Vitalité,20);
+  assert.equal(totals.Force,20);
+  assert.deepEqual(scaleEquipmentStatsForSlot({Esprit:10},"amulet"),{Esprit:4});
+});
+
 test("une présélection ne conserve que les objets possédés, compatibles et uniques",async()=>{
   const {sanitizePresetEquipment}=await import("../src/equipment/equipment-rules.mjs");
   const inventory=[weapon("sword"),ring("ring")];

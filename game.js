@@ -11,7 +11,7 @@ import { resolveMutationProfiles, tuneCombatEnemies as tuneEnemyGroup, livingEne
 import { assertSaveState, assertSaveBundle, validateGameContent, validateMapCatalog } from "./src/validation/game-schemas.mjs";
 import { migrateCatalogItem, migrateEquipmentSave, syncEquipmentProjection } from "./src/equipment/equipment-migration.mjs";
 import { EQUIPMENT_MODEL_VERSION, compatibleEquipmentSlots, createEmptyEquipment, equipmentSlotOrder, equipmentSlots, itemEquipTypes } from "./src/equipment/equipment-model.mjs";
-import { chooseEquipSlot, equipItem, equippedItems, findEquippedSlot, normalizeEquipment, sanitizePresetEquipment, sumEquipmentStats, unequipItem } from "./src/equipment/equipment-rules.mjs";
+import { chooseEquipSlot, equipItem, equippedItems, findEquippedSlot, normalizeEquipment, sanitizePresetEquipment, scaleEquipmentStatsForSlot, sumEquipmentStats, unequipItem } from "./src/equipment/equipment-rules.mjs";
 import DOMPurify from "dompurify";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
@@ -32,8 +32,8 @@ const statusCatalog=GAME_DATA.combat.statuses,abilityEffects=GAME_DATA.combat.ab
 const buildData=GAME_DATA.builds;
 const makeItem=id=>{const item=clone(itemCatalog[id]),info=rarityInfo(item.rarity),chance={commun:.15,rare:.45,épique:.75,légendaire:1}[item.rarity]||0,affix=random()<chance?clone(rand(buildData.affixes)):null,setId=Object.entries(buildData.sets).find(([,set])=>set.items.includes(id))?.[0],baseStats=clone(item.stats);item.stats=GAME_RULES.applyAffix(baseStats,affix);return {...item,uid:`${id}-${Math.floor(random()*1e9).toString(36)}`,level:1,baseStats,affix,rune:null,setId,type:`${itemEquipmentLabel(item)} · ${info.label}`,detail:formatStats(item.stats),rare:item.rarity!=="commun",color:info.color}};
 const lootTable=GAME_DATA.items.filter(item=>["commun","rare"].includes(item.rarity)).map(item=>item.id);
-const eliteLoot=GAME_DATA.items.filter(item=>item.rarity==="épique").map(item=>item.id);
-const artifactLoot=GAME_DATA.items.filter(item=>item.rarity==="légendaire").map(item=>item.id);
+const eliteLoot=GAME_DATA.items.filter(item=>item.rarity==="épique"&&!item.region).map(item=>item.id);
+const artifactLoot=GAME_DATA.items.filter(item=>item.rarity==="légendaire"&&!item.region).map(item=>item.id);
 const enemyBook={
   scout:enemyCatalog.ash_scout,hound:enemyCatalog.char_hound,cultist:enemyCatalog.veiled_cultist,brute:enemyCatalog.ruin_brute,
   widow:enemyCatalog.pale_widow,singer:enemyCatalog.grave_singer,remnant:enemyCatalog.iron_remnant,thief:enemyCatalog.cinder_thief,
@@ -153,7 +153,7 @@ function passiveStats(){
 }
 function gearStats(){
   const total={Force:0,Agilité:0,Vitalité:0,Esprit:0};
-  Object.assign(total,sumEquipmentStats(state.equipment,item=>scaledItemStats(item)));
+  Object.assign(total,sumEquipmentStats(state.equipment,(item,slotId)=>scaleEquipmentStatsForSlot(scaledItemStats(item),slotId)));
   return total;
 }
 function effectiveStats(){
@@ -282,7 +282,7 @@ function resolveNode(index){
   else if(type==="r1refuge")openCamp();
   else if(type==="r1memory")openEvent("r1memory");
   else if(type==="r1siege")startCombat(["banneret","warden"],{title:"Le Siège de la Brèche",waves:[["oracle","giant"]],elite:true,difficulty:3,xp:520,gold:145,rewardItem:makeItem("first_flame")});
-  else if(type==="r1detour"){const tier=activeMapNodes()[index].tier,groups={8:["banneret","knight","widow"],9:["giant","banneret","oracle"],10:["echo","giant","oracle"]},rewards={8:"exile_blade",9:"silent_bell",10:"road_end"};startCombat(groups[tier],{title:`Vestige de la Brèche · Rang ${tier}`,elite:true,abyss:tier===10,difficulty:4,xp:420+(tier-8)*90,gold:110+(tier-8)*35,rewardItem:makeItem(rewards[tier])})}
+  else if(type==="r1detour"){const tier=activeMapNodes()[index].tier,groups={8:["banneret","knight","widow"],9:["giant","banneret","oracle"],10:["echo","giant","oracle"]},rewards={8:"charred_striders",9:"silent_oath",10:"roadless_steps"};startCombat(groups[tier],{title:`Vestige de la Brèche · Rang ${tier}`,elite:true,abyss:tier===10,difficulty:4,xp:420+(tier-8)*90,gold:110+(tier-8)*35,rewardItem:makeItem(rewards[tier])})}
   else if(type==="r1finalboss")startCombat(["vharosUnbound"],{title:"Vharos · Délié du Trône",boss:true,regionEnd:1,difficulty:4,xp:520,gold:165,rewardItem:makeItem("ash_crown")});
   else if(type==="r2entry")openEvent("r2entry");
   else if(type==="r2story")openEvent("r2story");
@@ -297,39 +297,39 @@ function resolveNode(index){
   else if(type==="r2rift")startCombat(["nameEater","skyGrave"],{title:"La Faille ascendante",elite:true,difficulty:3,xp:590,gold:155,rewardItem:makeItem("ascendant_mail")});
   else if(type==="r2forge")openEvent("r2forge");
   else if(type==="r2threshold")startCombat(["starSmith","worldEye"],{title:"Les Gardiens du Premier Ciel",elite:true,difficulty:4,xp:720,gold:190,rewardItem:makeItem("first_sky_robe")});
-  else if(type==="r2elite"){const tier=activeMapNodes()[index].tier,groups={8:["root","glass","mirror"],9:["shadowless","leech","pilgrim"],10:["moth","harvester","inverted"],11:["magistrate","astronomer","mimic"],12:["skyGrave","nameEater","astronomer"],13:["voidBeast","mimic","leech"],14:["worldEye","starSmith","voidBeast"]},rewards={8:"astral_shell",9:"moonless_edge",10:"keeper_hide",11:"broken_halo",12:"name_cleaver",13:"void_menagerie_hide",14:"comet_bow"};startCombat(groups[tier],{title:`Épreuve interdite · Rang ${tier}`,elite:true,abyss:true,difficulty:Math.min(4,tier-6),xp:390+(tier-8)*90,gold:105+(tier-8)*32,rewardItem:makeItem(rewards[tier])})}
+  else if(type==="r2elite"){const tier=activeMapNodes()[index].tier,groups={8:["root","glass","mirror"],9:["shadowless","leech","pilgrim"],10:["moth","harvester","inverted"],11:["magistrate","astronomer","mimic"],12:["skyGrave","nameEater","astronomer"],13:["voidBeast","mimic","leech"],14:["worldEye","starSmith","voidBeast"]},rewards={8:"astral_shell",9:"moonless_edge",10:"keeper_hide",11:"broken_halo",12:"name_cleaver",13:"gravityless_steps",14:"veilkeeper_helm"};startCombat(groups[tier],{title:`Épreuve interdite · Rang ${tier}`,elite:true,abyss:true,difficulty:Math.min(4,tier-6),xp:390+(tier-8)*90,gold:105+(tier-8)*32,rewardItem:makeItem(rewards[tier])})}
   else if(type==="r2boss")startCombat(["veilKeeper"],{title:"Asterion · Reflet du Gardien",boss:true,bossMechanic:"asterion",difficulty:4,xp:720,gold:235,rewardItem:makeItem("veil_fragment")});
   else if(type==="r2shore")startCombat(["lunarMonk","worldEye"],{title:"Le Rivage au-dessus du ciel",difficulty:4,xp:690,gold:180});
   else if(type==="r2monastery")openEvent("r2monastery");
   else if(type==="r2aqueduct")startCombat(["lunarMonk","nameEater"],{title:"L'Aqueduc stellaire",waves:[["starSmith","worldEye"]],elite:true,difficulty:4,xp:960,gold:285,rewardItem:makeItem("dead_star_anvil")});
   else if(type==="r2moonrest")openCamp();
-  else if(type==="r2detour"){const tier=activeMapNodes()[index].tier,groups={15:["lunarMonk","voidBeast","mimic"],16:["worldEye","skyGrave","lunarMonk"],17:["asterionEclipsed","lunarMonk"]},rewards={15:"upward_drop",16:"comet_bow",17:"well_scepter"};startCombat(groups[tier],{title:`Épreuve de l'Éclipse · Rang ${tier}`,elite:true,abyss:tier===17,difficulty:4,xp:760+(tier-15)*110,gold:220+(tier-15)*40,rewardItem:makeItem(rewards[tier])})}
+  else if(type==="r2detour"){const tier=activeMapNodes()[index].tier,groups={15:["lunarMonk","voidBeast","mimic"],16:["worldEye","skyGrave","lunarMonk"],17:["asterionEclipsed","lunarMonk"]},rewards={15:"tidewalk_greaves",16:"drowned_choir",17:"well_scepter"};startCombat(groups[tier],{title:`Épreuve de l'Éclipse · Rang ${tier}`,elite:true,abyss:tier===17,difficulty:4,xp:760+(tier-15)*110,gold:220+(tier-15)*40,rewardItem:makeItem(rewards[tier])})}
   else if(type==="r2finalboss")startCombat(["asterionEclipsed"],{title:"Asterion · Cœur de l'Éclipse",boss:true,bossMechanic:"asterion",regionEnd:2,difficulty:4,xp:980,gold:330,rewardItem:makeItem("asterion_eye")});
   else if(type==="r3entry")openEvent("r3entry");
   else if(type==="r3refuge"){openCamp()}
   else if(type==="r3story")openEvent("r3story");
   else if(type==="r3battle"){const groups=[["legionary","wisp"],["gaoler","seraph"],["legionary","gaoler","wisp"]];startCombat(rand(groups),{title:"Les gardiens du Royaume",difficulty:4,xp:620,gold:145})}
   else if(type==="r3elite"){const groups=[["hollowKing","wisp"],["flameBeast","gaoler"],["archon","seraph","legionary"]];startCombat(rand(groups),{title:"Gardien de la Couronne",elite:true,difficulty:4,xp:820,gold:210})}
-  else if(type==="r3threshold")startCombat(["ashPrince","archon"],{title:"Le Prince sous la Cendre",boss:true,difficulty:4,xp:950,gold:280});
+  else if(type==="r3threshold")startCombat(["ashPrince","archon"],{title:"Le Prince sous la Cendre",boss:true,difficulty:4,xp:950,gold:280,rewardItem:makeItem("royal_ash_plate")});
   else if(type==="r3detour"){const tier=activeMapNodes()[index].tier,pool=[["hollowKing","gaoler","wisp"],["flameBeast","seraph"],["archon","legionary","seraph"]];startCombat(rand(pool),{title:`Secret royal · Rang ${tier}`,elite:true,abyss:true,difficulty:4,xp:760+(tier-15)*55,gold:190+(tier-15)*22})}
   else if(type==="r3boss")startCombat(["masterManifestation"],{title:"Le Reflet de la Couronne",boss:true,bossMechanic:"master",difficulty:4,xp:1160,gold:380});
   else if(type==="r3crownroad")startCombat(["royalMemory","hollowKing"],{title:"La Couronne fracturée",difficulty:4,xp:920,gold:255});
   else if(type==="r3council")openEvent("r3council");
-  else if(type==="r3innerstairs")startCombat(["royalMemory","seraph"],{title:"L'Escalier du Dedans",waves:[["archon","royalMemory","hollowKing"]],elite:true,difficulty:4,xp:1320,gold:390,rewardItem:makeItem("road_end")});
+  else if(type==="r3innerstairs")startCombat(["royalMemory","seraph"],{title:"L'Escalier du Dedans",waves:[["archon","royalMemory","hollowKing"]],elite:true,difficulty:4,xp:1320,gold:390,rewardItem:makeItem("mourning_medallion")});
   else if(type==="r3lastrefuge")openCamp();
-  else if(type==="r3legacy"){const tier=activeMapNodes()[index].tier,groups={23:["royalMemory","flameBeast","wisp"],24:["hollowKing","royalMemory","archon"],25:["crownedManifestation","royalMemory"]};startCombat(groups[tier],{title:`Héritage du Revenant · Rang ${tier}`,elite:true,abyss:tier===25,difficulty:4,xp:1050+(tier-23)*140,gold:300+(tier-23)*55,rewardItem:makeItem(artifactLoot[(tier-23)%artifactLoot.length])})}
-  else if(type==="r3finalboss")startCombat(["crownedManifestation"],{title:"La Manifestation couronnée",boss:true,bossMechanic:"master",regionEnd:3,difficulty:4,xp:1500,gold:500,rewardItem:makeItem("road_end")});
+  else if(type==="r3legacy"){const tier=activeMapNodes()[index].tier,groups={23:["royalMemory","flameBeast","wisp"],24:["hollowKing","royalMemory","archon"],25:["crownedManifestation","royalMemory"]},rewards={23:"crown_of_whispers",24:"thronebound_steps",25:"scepter_of_mute_king"};startCombat(groups[tier],{title:`Héritage du Revenant · Rang ${tier}`,elite:true,abyss:tier===25,difficulty:4,xp:1050+(tier-23)*140,gold:300+(tier-23)*55,rewardItem:makeItem(rewards[tier])})}
+  else if(type==="r3finalboss")startCombat(["crownedManifestation"],{title:"La Manifestation couronnée",boss:true,bossMechanic:"master",regionEnd:3,difficulty:4,xp:1500,gold:500,rewardItem:makeItem("crown_heart")});
   else if(type==="r4entry")openEvent("r4entry");
   else if(type==="r4refuge")openCamp();
   else if(type==="r4story")openEvent("r4story");
   else if(type==="r4battle"){const groups=[["cycleHound","ashScribe"],["oathKeeper","namelessTwin"],["cycleHound","ashScribe","namelessTwin"]];startCombat(rand(groups),{title:"Les souvenirs qui refusent de mourir",difficulty:4,xp:880,gold:210})}
-  else if(type==="r4elite"){startCombat(["firstWitness","oathKeeper"],{title:"Le Premier Témoin",elite:true,difficulty:4,xp:1180,gold:310,rewardItem:makeItem("last_guardian_mail")})}
-  else if(type==="r4threshold")startCombat(["crownEater","ashScribe"],{title:"Le Témoin immobile",boss:true,difficulty:4,xp:1350,gold:370,rewardItem:makeItem("true_name_seal")});
-  else if(type==="r4detour"){const tier=activeMapNodes()[index].tier,groups={23:["cycleHound","namelessTwin","ashScribe"],24:["oathKeeper","firstWitness"],25:["crownEater","namelessTwin"],26:["firstWitness","crownEater","ashScribe"]},rewards={23:"cycle_blade",24:"oath_armor",25:"memory_knot",26:"unwritten_weapon"};startCombat(groups[tier],{title:`Fin oubliée · Fragment ${tier-22}`,elite:true,abyss:true,difficulty:4,xp:980+(tier-23)*120,gold:250+(tier-23)*45,rewardItem:makeItem(rewards[tier])})}
-  else if(type==="r4boss")startCombat(["trueMaster"],{title:"Le Maître des Cendres · Serment final",boss:true,bossMechanic:"trueMaster",regionEnd:4,difficulty:4,xp:1800,gold:600,rewardItem:makeItem("true_name_seal")});
+  else if(type==="r4elite"){startCombat(["firstWitness","oathKeeper"],{title:"Le Premier Témoin",elite:true,difficulty:4,xp:1180,gold:310,rewardItem:makeItem("oathbound_greaves")})}
+  else if(type==="r4threshold")startCombat(["crownEater","ashScribe"],{title:"Le Témoin immobile",boss:true,difficulty:4,xp:1350,gold:370,rewardItem:makeItem("nameless_diadem")});
+  else if(type==="r4detour"){const tier=activeMapNodes()[index].tier,groups={23:["cycleHound","namelessTwin","ashScribe"],24:["oathKeeper","firstWitness"],25:["crownEater","namelessTwin"],26:["firstWitness","crownEater","ashScribe"]},rewards={23:"cycle_hood",24:"memory_locket",25:"steps_before_dawn",26:"oathbreaker_blade"};startCombat(groups[tier],{title:`Fin oubliée · Fragment ${tier-22}`,elite:true,abyss:true,difficulty:4,xp:980+(tier-23)*120,gold:250+(tier-23)*45,rewardItem:makeItem(rewards[tier])})}
+  else if(type==="r4boss")startCombat(["trueMaster"],{title:"Le Maître des Cendres · Serment final",boss:true,bossMechanic:"trueMaster",regionEnd:4,difficulty:4,xp:1800,gold:600,rewardItem:makeItem("hero_unmade_amulet")});
 }
 function startRevisitCombat(difficult=false){
-  if(random()<.05){startCombat(["wanderBoss"],{title:"Boss errant · Colosse des Cendres",elite:true,xp:185,gold:58,rewardItem:makeItem(rand(eliteLoot))});return}
+  if(random()<.05){const regional=GAME_DATA.items.filter(item=>item.rarity==="épique"&&(item.region||1)===state.currentRegion).map(item=>item.id);startCombat(["wanderBoss"],{title:"Boss errant · Colosse des Cendres",elite:true,xp:185,gold:58,rewardItem:makeItem(rand(regional.length?regional:eliteLoot))});return}
   const pool=state.currentRegion===4?["cycleHound","ashScribe","oathKeeper","namelessTwin"]:state.currentRegion===3?["legionary","wisp","gaoler","seraph"]:state.currentRegion===2?["root","mirror","leech","pilgrim","shadowless","glass"]:["scout","hound","cultist","brute","widow","singer","remnant","thief","faceless"];
   startCombat(difficult?[rand(pool),rand(pool)]:[rand(pool)],{title:difficult?"Embuscade renforcée":"Nouvelle embuscade",elite:difficult});
 }
@@ -522,7 +522,7 @@ function updateHud(){
   updateNemesisBadge();
   const campBuff=GAME_DATA.camp.buffs[state.camp.buff],campBadge=$("#camp-buff");campBadge.classList.toggle("hidden",!campBuff);campBadge.innerHTML=campBuff?`<span>${campBuff.icon}</span><div><small>PROCHAINE BATAILLE</small><b>${campBuff.name}</b></div>`:"";
 }
-function powerScore(){return state.level*10+Object.values(effectiveStats()).reduce((a,b)=>a+b,0)*3+equippedItems(state.equipment).reduce((sum,item)=>sum+itemPower(item),0)+state.equippedAbilities.reduce((sum,id)=>sum+(state.abilityRanks[id]||1)*5,0)}
+function powerScore(){return state.level*10+Object.values(effectiveStats()).reduce((a,b)=>a+b,0)*3+Object.values(gearStats()).reduce((sum,value)=>sum+value,0)+state.equippedAbilities.reduce((sum,id)=>sum+(state.abilityRanks[id]||1)*5,0)}
 function nemesisTraits(){return state.nemesis.traits.map(id=>GAME_DATA.nemesis.traits.find(trait=>trait.id===id)).filter(Boolean)}
 function empowerNemesis(enemy){
   const nemesis=state.nemesis,traits=nemesisTraits(),hpBonus=(nemesis.rank-1)*.22+traits.reduce((sum,trait)=>sum+(trait.hp||0),0),damageBonus=(nemesis.rank-1)*.14+traits.reduce((sum,trait)=>sum+(trait.damage||0),0);

@@ -75,3 +75,20 @@ test("les 62 objets historiques possèdent une classification cible explicite",a
   assert.equal(equipTypeForCatalogItem(items.find(item=>item.id==="ash_crown")),"head");
   assert.equal(equipTypeForCatalogItem(items.find(item=>item.id==="soot_ring")),"ring");
 });
+
+test("le catalogue enrichi couvre les huit emplacements dans les quatre régions",async()=>{
+  require("../data.js");
+  const {equipTypeForCatalogItem,legacyItemEquipTypeById,validateLegacyItemClassification}=await import("../src/equipment/legacy-item-classification.mjs");
+  const items=globalThis.GAME_DATA.items,types=["head","chest","legs","weapon","amulet","ring"];
+  assert.equal(items.length,98);
+  assert.deepEqual(validateLegacyItemClassification(items),[]);
+  const additions=items.filter(item=>!legacyItemEquipTypeById[item.id]);
+  assert.equal(additions.length,36);
+  assert.ok(additions.every(item=>item.equipType));
+  for(const region of [1,2,3,4]){
+    const regionTypes=new Set(items.filter(item=>(item.region||1)===region).map(equipTypeForCatalogItem));
+    types.forEach(type=>assert.ok(regionTypes.has(type),`région ${region} sans type ${type}`));
+  }
+  const legRarities=new Set(items.filter(item=>equipTypeForCatalogItem(item)==="legs").map(item=>item.rarity));
+  assert.deepEqual([...legRarities].sort(),["commun","légendaire","rare","épique"].sort());
+});
