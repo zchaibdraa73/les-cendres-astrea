@@ -39,7 +39,7 @@
     "@fontsource/cinzel": "5.3.0",
     "@fontsource/inter": "5.3.0",
     "@noble/hashes": "2.2.0",
-    "dompurify": "3.4.12",
+    "dompurify": "3.4.13",
     "zod": "4.4.3"
   }
 }
