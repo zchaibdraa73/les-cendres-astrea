@@ -27,12 +27,12 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@playwright/test": "1.62.0",
-    "@types/node": "24.13.3",
+    "@playwright/test": "1.62.1",
+    "@types/node": "26.1.2",
     "eslint": "10.8.0",
-    "globals": "17.8.0",
+    "globals": "17.9.0",
     "typescript": "7.0.2",
-    "vite": "8.1.5",
+    "vite": "8.2.1",
     "yaml": "2.9.0"
   },
   "dependencies": {
